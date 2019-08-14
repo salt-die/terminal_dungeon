@@ -7,6 +7,8 @@ import numpy as np
 import pygame
 import curses
 
+game = types.SimpleNamespace()
+
 player = types.SimpleNamespace(pos=np.array([0,0], dtype=float),\
                                vel=np.array([0,0], dtype=float), max_vel = 5,\
                                direction=np.array([0,0], dtype=float),\
@@ -30,8 +32,20 @@ rotate_right = np.array([[np.cos(player.rotate_vel),\
                          [-np.sin(player.rotate_vel),\
                           np.cos(player.rotate_vel)]])
 
-def draw_screen():
-    pass
+def load_map(map_name):
+    with open(map_name+".txt", 'r') as file:
+        world_map = np.array([list(row) for row in file.read().splitlines()],\
+                              dtype=str)
+    return world_map
+
+def draw_screen(stdscreen):
+    xdim, ydim = stdscreen.getmaxyx()
+    screen = np.full((xdim, ydim), " ", dtype=str) #set screen dim
+    #draw floor
+    screen[xdim//2:,:] = ASCII_MAP[1]
+    for row_num, row in enumerate(screen):
+        stdscreen.addstr(row_num, 0, ''.join(row[:-1]))
+    stdscreen.refresh()
 
 def user_input():
     for event in pygame.event.get():
@@ -56,7 +70,7 @@ def user_input():
         magnitude = np.linalg.norm(player.vel)
         if magnitude > player.max_vel:
             player.vel *= player.max_vel / magnitude
-        if not worldMap[(player.pos + player.vel).astype(int)]:
+        if not game.world_map[(player.pos + player.vel).astype(int)]:
             player.position += player.vel
 
     if keys[pygame.K_DOWN]:
@@ -64,19 +78,19 @@ def user_input():
         magnitude = np.linalg.norm(player.vel)
         if magnitude > player.max_vel:
             player.vel *= player.max_vel / magnitude
-        if not worldMap[(player.pos - player.vel).astype(int)]:
+        if not game.world_map[(player.pos - player.vel).astype(int)]:
             player.position -= player.vel
+
+    return True
 
 def main(stdscreen):
     pygame.init()
     init_curses(stdscreen)
     clock = pygame.time.Clock() #For limiting fps
-    running = True
-    while running:
-        screen = np.full(stdscreen.getmaxyx(), " ", dtype=str) #set screen dim
-        draw_screen()
+    game.world_map = load_map("map1")
+    while user_input():
+        draw_screen(stdscreen)
         clock.tick(40)
-        running = user_input()
     pygame.quit()
 
 def init_curses(stdscreen):
