@@ -104,6 +104,7 @@ def user_input():
         elif event.type == pygame.KEYUP:
             KEYS[event.key] = False
 
+def move():
     if KEYS[pygame.K_LEFT] or KEYS[pygame.K_a]:
         old_x_dir = PLAYER.x_dir
         PLAYER.x_dir = PLAYER.x_dir * LEFT_ROTATE[0] -\
@@ -179,6 +180,7 @@ def main(terminal):
     while GAME.running:
         draw_terminal_out(terminal)
         user_input()
+        move()
     clock.tick(40)
     pygame.quit()
 
