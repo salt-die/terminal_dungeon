@@ -63,16 +63,16 @@ def draw_terminal_out(terminal):
             if side_x_dis < side_y_dis:
                 side_x_dis += delta_x
                 map_x += step_x
-                side = 0
+                side = True
             else:
                 side_y_dis += delta_y
                 map_y += step_y
-                side = 1
+                side = False
             if GAME.world_map[map_x][map_y]:
                 hit = True
 
         #Avoiding euclidean distance, to avoid fish-eye effect.
-        if not side:
+        if side:
             wall_dis = abs((map_x - ray_x + (1 - step_x) / 2) / ray_x_dir)
         else:
             wall_dis = abs((map_y - ray_y + (1 - step_y) / 2) / ray_y_dir)
@@ -86,8 +86,8 @@ def draw_terminal_out(terminal):
         shade = int(np.clip(wall_dis, 0, 11))
         shade = 11 - shade
         #Draw a column
-        terminal_out[line_start:line_end, column] = ASCII_MAP[shade + 4]\
-                                     if side == 1 else ASCII_MAP[shade + 5]
+        terminal_out[line_start:line_end, column] = ASCII_MAP[shade + 5]\
+                                             if side else ASCII_MAP[shade + 4]
     terminal_out[5, 2:9] = np.array(list(f'{xdim:03},{ydim:03}')) #for testing
     terminal_out[7, 2:9] = np.array(list(f'{map_x:03},{map_y:03}'))
     #print to terminal_out
