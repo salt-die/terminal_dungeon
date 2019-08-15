@@ -3,154 +3,162 @@
 This will draw the player's current view and display it.
 """
 import types
-import numpy as np
+import math
 import pygame
 import curses
+import numpy as np
 
 game = types.SimpleNamespace()
 
-player = types.SimpleNamespace(pos=np.array([3,7], dtype=float),\
-                               vel=.0001,\
-                               direction=np.array([1,0], dtype=float),\
-                               rotate_vel = .1,\
-                               plane=np.array([0,.1]), dtype=float)
-
-movement = types.SimpleNamespace(left=False, right=False, up=False, down=False)
+keys=[False]*324
 
 ASCII_MAP = dict(enumerate([' ', '.', "'", ',', ':', ';', 'c', 'l', 'x', 'o',
                             'k', 'X', 'd', 'O', '0', 'K', 'N']))
 
-rotate_left = np.array([[np.cos(-player.rotate_vel),\
-                         np.sin(-player.rotate_vel)],\
-                        [-np.sin(-player.rotate_vel),\
-                         np.cos(-player.rotate_vel)]])
+player = types.SimpleNamespace(rotation=0.005, speed=0.02, x_pos=3.0,\
+                               y_pos=7.0, x_dir=1.0, y_dir = 0.0,\
+                               x_plane=0.0, y_plane=0.5)
 
-rotate_right = np.array([[np.cos(player.rotate_vel),\
-                          np.sin(player.rotate_vel)],\
-                         [-np.sin(player.rotate_vel),\
-                          np.cos(player.rotate_vel)]])
+right_rotate = (math.cos(player.rotation), math.sin(player.rotation))
+left_rotate = (math.cos(-player.rotation), math.sin(-player.rotation))
 
 def load_map(map_name):
     with open(map_name+".txt", 'r') as file:
-        world_map = np.array([list(row) for row in file.read().splitlines()],\
-                              dtype=str)
+        world_map = [[int(char) for char in row]\
+                      for row in file.read().splitlines()]
     return world_map
 
-def draw_screen(stdscreen):
-    xdim, ydim = stdscreen.getmaxyx()
-    screen = np.full((xdim, ydim), " ", dtype=str) #set screen dim
-    #draw floor
-    screen[xdim//2:,:] = ASCII_MAP[1]
-    #draw walls
-    for column in range(ydim):
-        field_of_view = .2 * column / xdim - 1
-        ray_pos = player.pos
-        map_pos = ray_pos.astype(int)
-        ray_dir = player.direction + player.plane * field_of_view
-        ray_delta = np.linalg.norm(ray_dir) / ray_dir
-        step = 2 * np.heaviside(ray_dir, 1) - 1 #np.sign of 0 is 0 -- need -1 or 1
-        side_distance = step * (map_pos + (step + 1)/ 2 - ray_pos) *\
-                        ray_delta
-        hit = 0
-        while not hit:
-            if side_distance[0] < side_distance[1]:
-                side_distance[0] += ray_delta[0]
-                map_pos[0] += step[0]
-                side = 0
-            else:
-                side_distance[1] += ray_delta[1]
-                map_pos[1] += step[1]
-                side = 1
-            
-            if game.world_map[int(map_pos[0]), int(map_pos[1])]=='1':
-                hit = 1
-        if side:
-            perp_wall_distance = np.abs((map_pos[1] - ray_pos[1] +\
-                                         (1 - step[1]) / 2) / ray_dir[1])                
-        else:
-            perp_wall_distance = np.abs((map_pos[0] - ray_pos[0] +\
-                                         (1 - step[0]) / 2) / ray_dir[0])
-            
-        line_height = np.abs(int(xdim / (perp_wall_distance + .0000001)))
-        draw_start = np.clip(-line_height // 2 + xdim // 2, 0, xdim)
-        draw_end = np.clip(line_height // 2 + xdim // 2, 0, xdim)
-        
-        screen[draw_start:draw_end, column] = ASCII_MAP[11]
-        screen[5][5] = int(player.pos[0])
-        screen[5][6] = ','
-        screen[5][7] = int(player.pos[1])
-    #print to screen
-    for row_num, row in enumerate(screen):
-        stdscreen.addstr(row_num, 0, ''.join(row[:-1]))
-    stdscreen.refresh()
-
-def user_input(stdscreen):
-    for event in pygame.event.get():
-        if event.type == pygame.KEYDOWN:
-            if event.key in [pygame.K_LEFT, pygame.K_a]:
-                movement.left = True
-            if event.key in [pygame.K_RIGHT, pygame.K_d]:
-                movement.right = True
-            if event.key in [pygame.K_UP, pygame.K_w]:
-                movement.up = True
-            if event.key in [pygame.K_DOWN, pygame.K_s]:
-                movement.down = True
-        elif event.type == pygame.KEYUP:
-            if event.key == pygame.K_ESCAPE:
-                return False
-            if event.key in [pygame.K_LEFT, pygame.K_a]:
-                movement.left = False
-            if event.key in [pygame.K_RIGHT, pygame.K_d]:
-                movement.right = False
-            if event.key in [pygame.K_UP, pygame.K_w]:
-                movement.up = False
-            if event.key in [pygame.K_DOWN, pygame.K_s]:
-                movement.down = False
-
-    if movement.left:
-        player.direction = player.direction @ rotate_left
-        player.plane = player.plane @ rotate_left
-    if movement.right:
-        player.direction = player.direction @ rotate_right
-        player.plane = player.direction @ rotate_right
-
-    if movement.up:
-        loc = (player.pos + player.vel * player.direction).astype(int)
-        if game.world_map[loc[0]][int(player.pos[1])]=='0':
-            player.pos[0] = loc[0]
-        if game.world_map[int(player.pos[0])][loc[1]]=='0':
-            player.pos[1] = loc[1]
-
-    if movement.down:
-        loc = (player.pos - player.vel * player.direction).astype(int)
-        if game.world_map[loc[0]][int(player.pos[1])]=='0':
-            player.pos[0] = loc[0]
-        if game.world_map[int(player.pos[0])][loc[1]]=='0':
-            player.pos[1] = loc[1]
-
-    return True
+def close():
+    pygame.display.quit()
+    pygame.quit()
 
 def main(stdscreen):
     pygame.init()
     init_curses(stdscreen)
     pygame.display.set_mode((1,1))
-    clock = pygame.time.Clock() #For limiting fps
+    clock = pygame.time.Clock()
     game.world_map = load_map("map1")
-    while user_input(stdscreen):
-        draw_screen(stdscreen)
-        clock.tick(40)
+
+
+    while True:
+        xdim, ydim = stdscreen.getmaxyx() #Get current terminal size.
+        screen = np.full((xdim, ydim), " ", dtype=str)
+        screen[xdim//2:,:] = ASCII_MAP[1] #Draw floor
+        #Draw walls
+        for column in range(ydim):
+            camera = column / xdim - 1.0
+            ray_x = player.x_pos
+            ray_y = player.y_pos
+            ray_x_dir = player.x_dir + player.x_plane * camera
+            ray_y_dir = player.y_dir + player.y_plane * camera + .0000000000001
+            map_x = int(ray_x)
+            map_y = int(ray_y)
+            delta_x = math.sqrt(1.0 + ray_y_dir**2 / ray_x_dir**2)
+            delta_y = math.sqrt(1.0 + ray_x_dir**2 / ray_y_dir**2)
+            if ray_x_dir < 0:
+                step_x = -1
+                side_x_dis = (ray_x - map_x) * delta_x
+            else:
+                step_x = 1
+                side_x_dis = (map_x + 1.0 - ray_x) * delta_x
+            if (ray_y_dir < 0):
+                step_y = -1
+                side_y_dis = (ray_y - map_y) * delta_y
+            else:
+                step_y = 1
+                side_y_dis = (map_y + 1.0 - ray_y) * delta_y
+            #Distance to wall
+            hit = False
+            while not hit:
+                if side_x_dis < side_y_dis:
+                    side_x_dis += delta_x
+                    map_x += step_x
+                    side = 0
+                else:
+                    side_y_dis += delta_y
+                    map_y += step_y
+                    side = 1
+                if game.world_map[map_x][map_y]:
+                    hit = True
+
+            #Fish-eye correction
+            if not side:
+                wall_dis = abs((map_x - ray_x + (1 - step_x) / 2) / ray_x_dir)
+            else:
+                wall_dis = abs((map_y - ray_y + (1 - step_y) / 2) / ray_y_dir)
+
+
+            line_height = abs(int(ydim / (wall_dis+.0000001)))
+            line_start = -line_height / 2 + xdim / 2
+            line_start = int(np.clip(line_start, 0, None))
+            line_end = line_height / 2 + xdim / 2
+            line_end = int(np.clip(line_end, None, ydim - 1))
+            shade = int(np.clip(wall_dis, 0, 12))
+            shade = 12 - shade
+            screen[line_start:line_end, column] = ASCII_MAP[shade]\
+                                         if side == 1 else ASCII_MAP[shade + 4]
+
+        #print to screen
+        for row_num, row in enumerate(screen):
+            stdscreen.addstr(row_num, 0, ''.join(row[:-1]))
+        stdscreen.refresh()
+
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    close()
+                    return
+                keys[event.key] = True
+            elif event.type == pygame.KEYUP:
+                keys[event.key] = False
+
+        if keys[pygame.K_LEFT]:
+            old_x_dir = player.x_dir
+            player.x_dir = player.x_dir * left_rotate[0] - player.y_dir * left_rotate[1]
+            player.y_dir = old_x_dir * left_rotate[1] + player.y_dir * left_rotate[0]
+            old_x_plane = player.x_plane
+            player.x_plane = player.x_plane * left_rotate[0] -\
+                             player.y_plane * left_rotate[1]
+            player.y_plane = old_x_plane * left_rotate[1] +\
+                             player.y_plane * left_rotate[0]
+
+        if keys[pygame.K_RIGHT]:
+            old_x_dir = player.x_dir
+            player.x_dir = player.x_dir * right_rotate[0] - player.y_dir * right_rotate[1]
+            player.y_dir = old_x_dir * right_rotate[1] + player.y_dir * right_rotate[0]
+            old_x_plane = player.x_plane
+            player.x_plane = player.x_plane * right_rotate[0] - \
+                             player.y_plane * right_rotate[1]
+            player.y_plane = old_x_plane * right_rotate[1] +\
+                             player.y_plane * right_rotate[0]
+
+        if keys[pygame.K_UP]:
+            if not game.world_map[int(player.x_pos +\
+                                      player.x_dir *\
+                                      player.speed)][int(player.y_pos)]:
+                player.x_pos += player.x_dir * player.speed
+            if not game.world_map[int(player.x_pos)][int(player.y_pos +\
+                                                     player.y_dir *\
+                                                     player.speed)]:
+                player.y_pos += player.y_dir * player.speed
+
+        if keys[pygame.K_DOWN]:
+            if not game.world_map[int(player.x_pos -\
+                                      player.x_dir *\
+                                      player.speed)][int(player.y_pos)]:
+                player.x_pos -= player.x_dir * player.speed
+            if not game.world_map[int(player.x_pos)][int(player.y_pos -\
+                                                     player.y_dir *\
+                                                     player.speed)]:
+                player.y_pos -= player.y_dir * player.speed
+
+    clock.tick(40)
     pygame.quit()
 
 def init_curses(stdscreen):
-    # Do not echo characters to terminal
     curses.noecho()
-    # No input buffer, make stdscreen.getch() nonblocking
-    curses.cbreak()
-    stdscreen.nodelay(1)
-    # Hide cursor
     curses.curs_set(0)
-    # Matrix colors :)
-    curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
+    curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)
     stdscreen.attron(curses.color_pair(1))
     stdscreen.clear()
 
