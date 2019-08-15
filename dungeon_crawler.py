@@ -7,7 +7,8 @@ import curses
 import pygame
 import numpy as np
 
-GAME = types.SimpleNamespace(mouse_sensitivity=1., running=True)
+GAME = types.SimpleNamespace(mouse_sensitivity=1., running=True,\
+                             texture_width=64, texture_height=64)
 
 PLAYER = types.SimpleNamespace(rotation=0.008, speed=0.03, x_pos=5.0,\
                                y_pos=5.0, x_dir=1.0, y_dir=0.0,\
@@ -21,10 +22,18 @@ RIGHT_ROTATE = (np.cos(PLAYER.rotation), np.sin(PLAYER.rotation))
 LEFT_ROTATE = (np.cos(-PLAYER.rotation), np.sin(-PLAYER.rotation))
 
 def load_map(map_name):
-    with open(map_name+".txt", 'r') as file:
+    with open(map_name+".txt", 'r') as a_map:
         world_map = [[int(char) for char in row]\
-                      for row in file.read().splitlines()]
+                      for row in a_map.read().splitlines()]
     return world_map
+
+def load_textures(*texture_names):
+    textures = []
+    for name in texture_names:
+        with open(name+".txt", 'r') as texture:
+            textures.append([[int(char) for char in row]\
+                              for row in texture.read().splitlines()])
+    return textures
 
 def close():
     pygame.display.quit()
@@ -85,9 +94,29 @@ def draw_terminal_out(terminal):
         #Shading
         shade = int(np.clip(wall_dis, 0, 20))
         shade = (20 - shade) // 2
+
         #Draw a column
         terminal_out[line_start:line_end, column] = ASCII_MAP[shade + 6]\
                                              if side else ASCII_MAP[shade + 4]
+
+        #Texturing
+        texture_num = GAME.world_map[map_x][map_y] - 1
+        if side:
+            wall_x = PLAYER.y_pos + wall_dis * ray_x
+        else:
+            wall_x = PLAYER.x_pos + wall_dis * ray_y
+        wall_x -= np.floor(wall_x)
+        tex_x = int(wall_x * GAME.texture_width)
+        if side and ray_x_dir > 0:
+            tex_x = GAME.texture_width - tex_x - 1
+        elif not side and ray_y_dir < 0:
+            tex_x = GAME.texture_width - tex_x - 1
+        #Replace non-" " characters with " " according to texture
+        for char in range(line_end - line_start):
+            tex_y = int(char / (line_end - line_start) * GAME.texture_height)
+            if not GAME.textures[texture_num][tex_x][tex_y]:
+                terminal_out[char + line_start][column] = " "
+
     terminal_out[5, 2:9] = np.array(list(f'{xdim:03},{ydim:03}')) #for testing
     terminal_out[7, 2:9] = np.array(list(f'{map_x:03},{map_y:03}'))
     #print to terminal_out
@@ -178,6 +207,7 @@ def main(terminal):
     init_pygame()
     clock = pygame.time.Clock()
     GAME.world_map = load_map("map1")
+    GAME.textures = load_textures("texture1",)
     while GAME.running:
         draw_terminal_out(terminal)
         user_input()
