@@ -71,7 +71,7 @@ def draw_terminal_out(terminal):
             if GAME.world_map[map_x][map_y]:
                 hit = True
 
-        #Fish-eye correction
+        #Avoiding euclidean distance, to avoid fish-eye effect.
         if not side:
             wall_dis = abs((map_x - ray_x + (1 - step_x) / 2) / ray_x_dir)
         else:
