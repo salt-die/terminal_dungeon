@@ -78,10 +78,10 @@ def draw_terminal_out(terminal):
             wall_dis = (map_y - ray_y + (1 - step_y) / 2) / ray_y_dir
 
         line_height = int(xdim / (wall_dis+.0000001))
-        line_start = -line_height / 2 + ydim / 2
-        line_start = int(np.clip(line_start, 0, None))
-        line_end = line_height / 2 + ydim / 2
-        line_end = int(np.clip(line_end, None, xdim - 1))
+        line_start = -line_height // 2 + ydim // 2
+        line_start = np.clip(line_start, 0, None)
+        line_end = line_height // 2 + ydim // 2
+        line_end = np.clip(line_end, None, xdim - 1)
         #Shading
         shade = int(np.clip(wall_dis, 0, 11))
         shade = 11 - shade
