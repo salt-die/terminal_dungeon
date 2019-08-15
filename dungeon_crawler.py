@@ -121,7 +121,7 @@ def draw_terminal_out(terminal):
                 terminal_out[np.clip(char, None, ydim - 1)][column] = " " 
 
     terminal_out[5, 2:9] = np.array(list(f'{xdim:03},{ydim:03}')) #for testing
-    terminal_out[7, 2:9] = np.array(list(f'{map_x:03},{map_y:03}'))
+    terminal_out[7, 2:9] = np.array(list(f'{int(PLAYER.x_pos):03},{int(PLAYER.y_pos):03}'))
     #print to terminal_out
     for row_num, row in enumerate(terminal_out):
         terminal.addstr(row_num, 0, ''.join(row[:-1]))
@@ -210,7 +210,7 @@ def main(terminal):
     init_pygame()
     clock = pygame.time.Clock()
     GAME.world_map = load_map("map1")
-    GAME.textures = load_textures("texture2",)
+    GAME.textures = load_textures("texture1",)
     while GAME.running:
         draw_terminal_out(terminal)
         user_input()
