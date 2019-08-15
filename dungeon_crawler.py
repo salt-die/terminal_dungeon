@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-This will draw the PLAYER's current view and display it.
+A terminal based ray-casting engine.
+
+Make sure the pygame window is focused for input events to be received.
 """
 import types
 import curses
