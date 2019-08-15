@@ -13,7 +13,7 @@ GAME = types.SimpleNamespace(mouse_sensitivity=1., running=True,\
                              texture_width=29, texture_height=21)
 
 PLAYER = types.SimpleNamespace(rotation=0.008, speed=0.03, x_pos=5.0,\
-                               y_pos=5.0, x_dir=1.0, y_dir=0.0,\
+                               y_pos=5.0, x_dir=1.0, y_dir=0.0, angle=np.pi/2,\
                                x_plane=0.0, y_plane=0.3)
 KEYS = [False]*324
 
@@ -52,11 +52,17 @@ def draw_terminal_out(terminal):
         ray_x = PLAYER.x_pos
         ray_y = PLAYER.y_pos
         ray_x_dir = PLAYER.x_dir + PLAYER.x_plane * camera
-        ray_y_dir = PLAYER.y_dir + PLAYER.y_plane * camera + .0000000000001
+        ray_y_dir = PLAYER.y_dir + PLAYER.y_plane * camera
         map_x = int(ray_x)
         map_y = int(ray_y)
-        delta_x = abs(1/ray_x_dir)
-        delta_y = abs(1/ray_y_dir)
+        try:
+            delta_x = abs(1/ray_x_dir)
+        except ZeroDivisionError:
+            delta_x = float("inf")
+        try:
+            delta_y = abs(1/ray_y_dir)
+        except ZeroDivisionError:
+            delta_y = float("inf")
         if ray_x_dir < 0:
             step_x = -1
             side_x_dis = (ray_x - map_x) * delta_x
@@ -88,8 +94,10 @@ def draw_terminal_out(terminal):
             wall_dis = (map_x - ray_x + (1 - step_x) / 2) / ray_x_dir
         else:
             wall_dis = (map_y - ray_y + (1 - step_y) / 2) / ray_y_dir
-
-        line_height = int(xdim / (wall_dis+.0000001))
+        try:
+            line_height = int(xdim / (wall_dis))
+        except ZeroDivisionError:
+            line_height = float("inf")
         line_start = -line_height // 2 + ydim // 2
         line_start = np.clip(line_start, 0, None)
         line_end = line_height // 2 + ydim // 2
@@ -119,7 +127,7 @@ def draw_terminal_out(terminal):
             if not GAME.textures[texture_num][tex_x][tex_y]:
                 #can't figure out why char keeps going out of bounds
                 #hence the numpy clip
-                terminal_out[np.clip(char, None, ydim - 1)][column] = " " 
+                terminal_out[np.clip(char, None, ydim - 1)][column] = " "
 
     terminal_out[5, 2:9] = np.array(list(f'{xdim:03},{ydim:03}')) #for testing
     terminal_out[7, 2:9] = np.array(list(f'{int(PLAYER.x_pos):03},{int(PLAYER.y_pos):03}'))
