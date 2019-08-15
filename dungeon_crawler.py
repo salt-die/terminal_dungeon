@@ -8,7 +8,7 @@ import pygame
 import numpy as np
 
 GAME = types.SimpleNamespace(mouse_sensitivity=1., running=True,\
-                             texture_width=64, texture_height=64)
+                             texture_width=29, texture_height=21)
 
 PLAYER = types.SimpleNamespace(rotation=0.008, speed=0.03, x_pos=5.0,\
                                y_pos=5.0, x_dir=1.0, y_dir=0.0,\
@@ -112,10 +112,13 @@ def draw_terminal_out(terminal):
         elif not side and ray_y_dir < 0:
             tex_x = GAME.texture_width - tex_x - 1
         #Replace non-" " characters with " " according to texture
-        for char in range(line_end - line_start):
-            tex_y = int(char / (line_end - line_start) * GAME.texture_height)
-            if not GAME.textures[texture_num][tex_x][tex_y]:
-                terminal_out[char + line_start][column] = " "
+        for char in range(line_start, line_end):
+            tex_y = int((char - line_start) / (line_end - line_start) *\
+                        GAME.texture_height)
+            if not GAME.textures[texture_num][tex_y][tex_x]:
+                #can't figure out why char keeps going out of bounds
+                #hence the numpy clip
+                terminal_out[np.clip(char, None, ydim - 1)][column] = " " 
 
     terminal_out[5, 2:9] = np.array(list(f'{xdim:03},{ydim:03}')) #for testing
     terminal_out[7, 2:9] = np.array(list(f'{map_x:03},{map_y:03}'))
@@ -207,7 +210,7 @@ def main(terminal):
     init_pygame()
     clock = pygame.time.Clock()
     GAME.world_map = load_map("map1")
-    GAME.textures = load_textures("texture1",)
+    GAME.textures = load_textures("texture2",)
     while GAME.running:
         draw_terminal_out(terminal)
         user_input()
