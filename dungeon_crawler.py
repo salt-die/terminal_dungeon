@@ -1,25 +1,24 @@
 # -*- coding: utf-8 -*-
 """
-This will draw the player's current view and display it.
+This will draw the PLAYER's current view and display it.
 """
 import types
-import pygame
 import curses
+import pygame
 import numpy as np
 
-game = types.SimpleNamespace(mouse_sensitivity=1., running=True)
+GAME = types.SimpleNamespace(mouse_sensitivity=1., running=True)
 
-keys=[False]*324
+PLAYER = types.SimpleNamespace(rotation=0.008, speed=0.03, x_pos=5.0,\
+                               y_pos=5.0, x_dir=1.0, y_dir=0.0,\
+                               x_plane=0.0, y_plane=0.5)
+KEYS = [False]*324
 
-ascii_map = dict(enumerate([' ', '.', "'", ',', ':', ';', 'c', 'l', 'x', 'o',
+ASCII_MAP = dict(enumerate([' ', '.', "'", ',', ':', ';', 'c', 'l', 'x', 'o',
                             'k', 'X', 'd', 'O', '0', 'K', 'N']))
 
-player = types.SimpleNamespace(rotation=0.008, speed=0.03, x_pos=5.0,\
-                               y_pos=5.0, x_dir=1.0, y_dir = 0.0,\
-                               x_plane=0.0, y_plane=0.5)
-
-right_rotate = (np.cos(player.rotation), np.sin(player.rotation))
-left_rotate = (np.cos(-player.rotation), np.sin(-player.rotation))
+RIGHT_ROTATE = (np.cos(PLAYER.rotation), np.sin(PLAYER.rotation))
+LEFT_ROTATE = (np.cos(-PLAYER.rotation), np.sin(-PLAYER.rotation))
 
 def load_map(map_name):
     with open(map_name+".txt", 'r') as file:
@@ -34,14 +33,14 @@ def close():
 def draw_terminal_out(terminal):
     ydim, xdim = terminal.getmaxyx() #Get current terminal size.
     terminal_out = np.full((ydim, xdim), " ", dtype=str)
-    terminal_out[ydim//2:,:] = ascii_map[1] #Draw floor
+    terminal_out[ydim//2:, :] = ASCII_MAP[1] #Draw floor
     #Draw walls
     for column in range(xdim):
         camera = column / ydim - 1.0
-        ray_x = player.x_pos
-        ray_y = player.y_pos
-        ray_x_dir = player.x_dir + player.x_plane * camera
-        ray_y_dir = player.y_dir + player.y_plane * camera + .0000000000001
+        ray_x = PLAYER.x_pos
+        ray_y = PLAYER.y_pos
+        ray_x_dir = PLAYER.x_dir + PLAYER.x_plane * camera
+        ray_y_dir = PLAYER.y_dir + PLAYER.y_plane * camera + .0000000000001
         map_x = int(ray_x)
         map_y = int(ray_y)
         delta_x = np.sqrt(1.0 + ray_y_dir**2 / ray_x_dir**2)
@@ -52,7 +51,7 @@ def draw_terminal_out(terminal):
         else:
             step_x = 1
             side_x_dis = (map_x + 1.0 - ray_x) * delta_x
-        if (ray_y_dir < 0):
+        if ray_y_dir < 0:
             step_y = -1
             side_y_dis = (ray_y - map_y) * delta_y
         else:
@@ -69,7 +68,7 @@ def draw_terminal_out(terminal):
                 side_y_dis += delta_y
                 map_y += step_y
                 side = 1
-            if game.world_map[map_x][map_y]:
+            if GAME.world_map[map_x][map_y]:
                 hit = True
 
         #Fish-eye correction
@@ -87,10 +86,10 @@ def draw_terminal_out(terminal):
         shade = int(np.clip(wall_dis, 0, 11))
         shade = 11 - shade
         #Draw a column
-        terminal_out[line_start:line_end, column] = ascii_map[shade + 4]\
-                                     if side == 1 else ascii_map[shade + 5]
-    terminal_out[5,2:9] = np.array(list(f'{xdim:03},{ydim:03}')) #for testing
-    terminal_out[7,2:9] = np.array(list(f'{map_x:03},{map_y:03}'))
+        terminal_out[line_start:line_end, column] = ASCII_MAP[shade + 4]\
+                                     if side == 1 else ASCII_MAP[shade + 5]
+    terminal_out[5, 2:9] = np.array(list(f'{xdim:03},{ydim:03}')) #for testing
+    terminal_out[7, 2:9] = np.array(list(f'{map_x:03},{map_y:03}'))
     #print to terminal_out
     for row_num, row in enumerate(terminal_out):
         terminal.addstr(row_num, 0, ''.join(row[:-1]))
@@ -100,84 +99,84 @@ def user_input():
     for event in pygame.event.get():
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
-                game.running = False
-            keys[event.key] = True
+                GAME.running = False
+            KEYS[event.key] = True
         elif event.type == pygame.KEYUP:
-            keys[event.key] = False
+            KEYS[event.key] = False
 
-    if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-        old_x_dir = player.x_dir
-        player.x_dir = player.x_dir * left_rotate[0] -\
-                       player.y_dir * left_rotate[1]
-        player.y_dir = old_x_dir * left_rotate[1] + \
-                       player.y_dir * left_rotate[0]
-        old_x_plane = player.x_plane
-        player.x_plane = player.x_plane * left_rotate[0] -\
-                         player.y_plane * left_rotate[1]
-        player.y_plane = old_x_plane * left_rotate[1] +\
-                         player.y_plane * left_rotate[0]
+    if KEYS[pygame.K_LEFT] or KEYS[pygame.K_a]:
+        old_x_dir = PLAYER.x_dir
+        PLAYER.x_dir = PLAYER.x_dir * LEFT_ROTATE[0] -\
+                       PLAYER.y_dir * LEFT_ROTATE[1]
+        PLAYER.y_dir = old_x_dir * LEFT_ROTATE[1] + \
+                       PLAYER.y_dir * LEFT_ROTATE[0]
+        old_x_plane = PLAYER.x_plane
+        PLAYER.x_plane = PLAYER.x_plane * LEFT_ROTATE[0] -\
+                         PLAYER.y_plane * LEFT_ROTATE[1]
+        PLAYER.y_plane = old_x_plane * LEFT_ROTATE[1] +\
+                         PLAYER.y_plane * LEFT_ROTATE[0]
 
-    if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-        old_x_dir = player.x_dir
-        player.x_dir = player.x_dir * right_rotate[0] -\
-                       player.y_dir * right_rotate[1]
-        player.y_dir = old_x_dir * right_rotate[1] + \
-                       player.y_dir * right_rotate[0]
-        old_x_plane = player.x_plane
-        player.x_plane = player.x_plane * right_rotate[0] - \
-                         player.y_plane * right_rotate[1]
-        player.y_plane = old_x_plane * right_rotate[1] +\
-                         player.y_plane * right_rotate[0]
+    if KEYS[pygame.K_RIGHT] or KEYS[pygame.K_d]:
+        old_x_dir = PLAYER.x_dir
+        PLAYER.x_dir = PLAYER.x_dir * RIGHT_ROTATE[0] -\
+                       PLAYER.y_dir * RIGHT_ROTATE[1]
+        PLAYER.y_dir = old_x_dir * RIGHT_ROTATE[1] + \
+                       PLAYER.y_dir * RIGHT_ROTATE[0]
+        old_x_plane = PLAYER.x_plane
+        PLAYER.x_plane = PLAYER.x_plane * RIGHT_ROTATE[0] - \
+                         PLAYER.y_plane * RIGHT_ROTATE[1]
+        PLAYER.y_plane = old_x_plane * RIGHT_ROTATE[1] +\
+                         PLAYER.y_plane * RIGHT_ROTATE[0]
 
-    if keys[pygame.K_UP] or keys[pygame.K_w]:
-        if not game.world_map[int(player.x_pos +\
-                                  player.x_dir *\
-                                  player.speed)][int(player.y_pos)]:
-            player.x_pos += player.x_dir * player.speed
-        if not game.world_map[int(player.x_pos)][int(player.y_pos +\
-                                                 player.y_dir *\
-                                                 player.speed)]:
-            player.y_pos += player.y_dir * player.speed
+    if KEYS[pygame.K_UP] or KEYS[pygame.K_w]:
+        if not GAME.world_map[int(PLAYER.x_pos +\
+                                  PLAYER.x_dir *\
+                                  PLAYER.speed)][int(PLAYER.y_pos)]:
+            PLAYER.x_pos += PLAYER.x_dir * PLAYER.speed
+        if not GAME.world_map[int(PLAYER.x_pos)][int(PLAYER.y_pos +\
+                                                 PLAYER.y_dir *\
+                                                 PLAYER.speed)]:
+            PLAYER.y_pos += PLAYER.y_dir * PLAYER.speed
 
-    if keys[pygame.K_DOWN] or keys[pygame.K_s]:
-        if not game.world_map[int(player.x_pos -\
-                                  player.x_dir *\
-                                  player.speed)][int(player.y_pos)]:
-            player.x_pos -= player.x_dir * player.speed
-        if not game.world_map[int(player.x_pos)][int(player.y_pos -\
-                                                 player.y_dir *\
-                                                 player.speed)]:
-            player.y_pos -= player.y_dir * player.speed
+    if KEYS[pygame.K_DOWN] or KEYS[pygame.K_s]:
+        if not GAME.world_map[int(PLAYER.x_pos -\
+                                  PLAYER.x_dir *\
+                                  PLAYER.speed)][int(PLAYER.y_pos)]:
+            PLAYER.x_pos -= PLAYER.x_dir * PLAYER.speed
+        if not GAME.world_map[int(PLAYER.x_pos)][int(PLAYER.y_pos -\
+                                                 PLAYER.y_dir *\
+                                                 PLAYER.speed)]:
+            PLAYER.y_pos -= PLAYER.y_dir * PLAYER.speed
 
-    if keys[pygame.K_q]:
-        perp_x_dir = player.y_dir
-        perp_y_dir = -player.x_dir
-        if not game.world_map[int(player.x_pos +\
+    if KEYS[pygame.K_q]:
+        perp_x_dir = PLAYER.y_dir
+        perp_y_dir = -PLAYER.x_dir
+        if not GAME.world_map[int(PLAYER.x_pos +\
                                   perp_x_dir *\
-                                  player.speed)][int(player.y_pos)]:
-            player.x_pos += perp_x_dir * player.speed
-        if not game.world_map[int(player.x_pos)][int(player.y_pos +\
+                                  PLAYER.speed)][int(PLAYER.y_pos)]:
+            PLAYER.x_pos += perp_x_dir * PLAYER.speed
+        if not GAME.world_map[int(PLAYER.x_pos)][int(PLAYER.y_pos +\
                                                  perp_y_dir *\
-                                                 player.speed)]:
-            player.y_pos += perp_y_dir * player.speed
+                                                 PLAYER.speed)]:
+            PLAYER.y_pos += perp_y_dir * PLAYER.speed
 
-    if keys[pygame.K_e]:
-        perp_x_dir = player.y_dir
-        perp_y_dir = -player.x_dir
-        if not game.world_map[int(player.x_pos -\
+    if KEYS[pygame.K_e]:
+        perp_x_dir = PLAYER.y_dir
+        perp_y_dir = -PLAYER.x_dir
+        if not GAME.world_map[int(PLAYER.x_pos -\
                                   perp_x_dir *\
-                                  player.speed)][int(player.y_pos)]:
-            player.x_pos -= perp_x_dir * player.speed
-        if not game.world_map[int(player.x_pos)][int(player.y_pos -\
+                                  PLAYER.speed)][int(PLAYER.y_pos)]:
+            PLAYER.x_pos -= perp_x_dir * PLAYER.speed
+        if not GAME.world_map[int(PLAYER.x_pos)][int(PLAYER.y_pos -\
                                                  perp_y_dir *\
-                                                 player.speed)]:
-            player.y_pos -= perp_y_dir * player.speed
+                                                 PLAYER.speed)]:
+            PLAYER.y_pos -= perp_y_dir * PLAYER.speed
 
 def main(terminal):
     init_curses(terminal)
     clock = pygame.time.Clock()
-    game.world_map = load_map("map1")
-    while game.running:
+    GAME.world_map = load_map("map1")
+    while GAME.running:
         draw_terminal_out(terminal)
         user_input()
     clock.tick(40)
@@ -192,5 +191,5 @@ def init_curses(terminal):
 
 if __name__ == "__main__":
     pygame.init()
-    pygame.display.set_mode((35,2))
+    pygame.display.set_mode((35, 2))
     curses.wrapper(main)
