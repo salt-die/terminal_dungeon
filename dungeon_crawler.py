@@ -39,8 +39,9 @@ def main(stdscreen):
     clock = pygame.time.Clock()
     game.world_map = load_map("map1")
 
-
+    #Main Loop =========================================================
     while True:
+        #Draw ==========================================================
         xdim, ydim = stdscreen.getmaxyx() #Get current terminal size.
         screen = np.full((xdim, ydim), " ", dtype=str)
         screen[xdim//2:,:] = ASCII_MAP[1] #Draw floor
@@ -103,6 +104,7 @@ def main(stdscreen):
             stdscreen.addstr(row_num, 0, ''.join(row[:-1]))
         stdscreen.refresh()
 
+        #User Input ====================================================
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
@@ -112,7 +114,7 @@ def main(stdscreen):
             elif event.type == pygame.KEYUP:
                 keys[event.key] = False
 
-        if keys[pygame.K_LEFT]:
+        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
             old_x_dir = player.x_dir
             player.x_dir = player.x_dir * left_rotate[0] - player.y_dir * left_rotate[1]
             player.y_dir = old_x_dir * left_rotate[1] + player.y_dir * left_rotate[0]
@@ -122,7 +124,7 @@ def main(stdscreen):
             player.y_plane = old_x_plane * left_rotate[1] +\
                              player.y_plane * left_rotate[0]
 
-        if keys[pygame.K_RIGHT]:
+        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
             old_x_dir = player.x_dir
             player.x_dir = player.x_dir * right_rotate[0] - player.y_dir * right_rotate[1]
             player.y_dir = old_x_dir * right_rotate[1] + player.y_dir * right_rotate[0]
@@ -132,7 +134,7 @@ def main(stdscreen):
             player.y_plane = old_x_plane * right_rotate[1] +\
                              player.y_plane * right_rotate[0]
 
-        if keys[pygame.K_UP]:
+        if keys[pygame.K_UP] or keys[pygame.K_w]:
             if not game.world_map[int(player.x_pos +\
                                       player.x_dir *\
                                       player.speed)][int(player.y_pos)]:
@@ -142,7 +144,7 @@ def main(stdscreen):
                                                      player.speed)]:
                 player.y_pos += player.y_dir * player.speed
 
-        if keys[pygame.K_DOWN]:
+        if keys[pygame.K_DOWN] or keys[pygame.K_s]:
             if not game.world_map[int(player.x_pos -\
                                       player.x_dir *\
                                       player.speed)][int(player.y_pos)]:
@@ -152,13 +154,37 @@ def main(stdscreen):
                                                      player.speed)]:
                 player.y_pos -= player.y_dir * player.speed
 
+        if keys[pygame.K_q]:
+            perp_x_dir = player.y_dir
+            perp_y_dir = -player.x_dir
+            if not game.world_map[int(player.x_pos +\
+                                      perp_x_dir *\
+                                      player.speed)][int(player.y_pos)]:
+                player.x_pos += perp_x_dir * player.speed
+            if not game.world_map[int(player.x_pos)][int(player.y_pos +\
+                                                     perp_y_dir *\
+                                                     player.speed)]:
+                player.y_pos += perp_y_dir * player.speed
+
+        if keys[pygame.K_e]:
+            perp_x_dir = player.y_dir
+            perp_y_dir = -player.x_dir
+            if not game.world_map[int(player.x_pos -\
+                                      perp_x_dir *\
+                                      player.speed)][int(player.y_pos)]:
+                player.x_pos -= perp_x_dir * player.speed
+            if not game.world_map[int(player.x_pos)][int(player.y_pos -\
+                                                     perp_y_dir *\
+                                                     player.speed)]:
+                player.y_pos -= perp_y_dir * player.speed
+
     clock.tick(40)
     pygame.quit()
 
 def init_curses(stdscreen):
     curses.noecho()
     curses.curs_set(0)
-    curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)
+    curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
     stdscreen.attron(curses.color_pair(1))
     stdscreen.clear()
 
