@@ -11,7 +11,7 @@ GAME = types.SimpleNamespace(mouse_sensitivity=1., running=True)
 
 PLAYER = types.SimpleNamespace(rotation=0.008, speed=0.03, x_pos=5.0,\
                                y_pos=5.0, x_dir=1.0, y_dir=0.0,\
-                               x_plane=0.0, y_plane=0.5)
+                               x_plane=0.0, y_plane=0.3)
 KEYS = [False]*324
 
 ASCII_MAP = dict(enumerate([' ', '.', "'", ',', ':', ';', 'c', 'l', 'x', 'o',
@@ -83,10 +83,10 @@ def draw_terminal_out(terminal):
         line_end = line_height // 2 + ydim // 2
         line_end = np.clip(line_end, None, xdim - 1)
         #Shading
-        shade = int(np.clip(wall_dis, 0, 11))
-        shade = 11 - shade
+        shade = int(np.clip(wall_dis, 0, 20))
+        shade = (20 - shade) // 2
         #Draw a column
-        terminal_out[line_start:line_end, column] = ASCII_MAP[shade + 5]\
+        terminal_out[line_start:line_end, column] = ASCII_MAP[shade + 6]\
                                              if side else ASCII_MAP[shade + 4]
     terminal_out[5, 2:9] = np.array(list(f'{xdim:03},{ydim:03}')) #for testing
     terminal_out[7, 2:9] = np.array(list(f'{map_x:03},{map_y:03}'))
