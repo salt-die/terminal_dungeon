@@ -73,11 +73,11 @@ def draw_terminal_out(terminal):
 
         #Avoiding euclidean distance, to avoid fish-eye effect.
         if side:
-            wall_dis = abs((map_x - ray_x + (1 - step_x) / 2) / ray_x_dir)
+            wall_dis = (map_x - ray_x + (1 - step_x) / 2) / ray_x_dir
         else:
-            wall_dis = abs((map_y - ray_y + (1 - step_y) / 2) / ray_y_dir)
+            wall_dis = (map_y - ray_y + (1 - step_y) / 2) / ray_y_dir
 
-        line_height = abs(int(xdim / (wall_dis+.0000001)))
+        line_height = int(xdim / (wall_dis+.0000001))
         line_start = -line_height / 2 + ydim / 2
         line_start = int(np.clip(line_start, 0, None))
         line_end = line_height / 2 + ydim / 2
