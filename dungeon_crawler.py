@@ -17,8 +17,7 @@ PLAYER = types.SimpleNamespace(rotation=0.008, speed=0.03, x_pos=5.0,\
                                x_plane=0.0, y_plane=0.3)
 KEYS = [False]*324
 
-ASCII_MAP = dict(enumerate([' ', '.', "'", ',', ':', ';', 'c', 'l', 'x', 'o',
-                            'k', 'X', 'd', 'O', '0', 'K', 'N']))
+ASCII_MAP = dict(enumerate(list(" .',:;clxokXdO0KN")))
 
 RIGHT_ROTATE = (np.cos(PLAYER.rotation), np.sin(PLAYER.rotation))
 LEFT_ROTATE = (np.cos(-PLAYER.rotation), np.sin(-PLAYER.rotation))
