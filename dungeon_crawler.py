@@ -3,7 +3,6 @@
 This will draw the player's current view and display it.
 """
 import types
-import math
 import pygame
 import curses
 import numpy as np
@@ -15,12 +14,12 @@ keys=[False]*324
 ASCII_MAP = dict(enumerate([' ', '.', "'", ',', ':', ';', 'c', 'l', 'x', 'o',
                             'k', 'X', 'd', 'O', '0', 'K', 'N']))
 
-player = types.SimpleNamespace(rotation=0.005, speed=0.02, x_pos=3.0,\
+player = types.SimpleNamespace(rotation=0.008, speed=0.03, x_pos=3.0,\
                                y_pos=7.0, x_dir=1.0, y_dir = 0.0,\
                                x_plane=0.0, y_plane=0.5)
 
-right_rotate = (math.cos(player.rotation), math.sin(player.rotation))
-left_rotate = (math.cos(-player.rotation), math.sin(-player.rotation))
+right_rotate = (np.cos(player.rotation), np.sin(player.rotation))
+left_rotate = (np.cos(-player.rotation), np.sin(-player.rotation))
 
 def load_map(map_name):
     with open(map_name+".txt", 'r') as file:
@@ -54,8 +53,8 @@ def main(stdscreen):
             ray_y_dir = player.y_dir + player.y_plane * camera + .0000000000001
             map_x = int(ray_x)
             map_y = int(ray_y)
-            delta_x = math.sqrt(1.0 + ray_y_dir**2 / ray_x_dir**2)
-            delta_y = math.sqrt(1.0 + ray_x_dir**2 / ray_y_dir**2)
+            delta_x = np.sqrt(1.0 + ray_y_dir**2 / ray_x_dir**2)
+            delta_y = np.sqrt(1.0 + ray_x_dir**2 / ray_y_dir**2)
             if ray_x_dir < 0:
                 step_x = -1
                 side_x_dis = (ray_x - map_x) * delta_x
@@ -94,10 +93,10 @@ def main(stdscreen):
             line_start = int(np.clip(line_start, 0, None))
             line_end = line_height / 2 + xdim / 2
             line_end = int(np.clip(line_end, None, ydim - 1))
-            shade = int(np.clip(wall_dis, 0, 12))
-            shade = 12 - shade
-            screen[line_start:line_end, column] = ASCII_MAP[shade]\
-                                         if side == 1 else ASCII_MAP[shade + 4]
+            shade = int(np.clip(wall_dis, 0, 11))
+            shade = 11 - shade
+            screen[line_start:line_end, column] = ASCII_MAP[shade + 4]\
+                                         if side == 1 else ASCII_MAP[shade + 5]
 
         #print to screen
         for row_num, row in enumerate(screen):
