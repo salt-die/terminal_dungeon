@@ -11,7 +11,7 @@ game = types.SimpleNamespace(mouse_sensitivity=1., running=True)
 
 keys=[False]*324
 
-ASCII_MAP = dict(enumerate([' ', '.', "'", ',', ':', ';', 'c', 'l', 'x', 'o',
+ascii_map = dict(enumerate([' ', '.', "'", ',', ':', ';', 'c', 'l', 'x', 'o',
                             'k', 'X', 'd', 'O', '0', 'K', 'N']))
 
 player = types.SimpleNamespace(rotation=0.008, speed=0.03, x_pos=5.0,\
@@ -34,7 +34,7 @@ def close():
 def draw_terminal_out(terminal):
     ydim, xdim = terminal.getmaxyx() #Get current terminal size.
     terminal_out = np.full((ydim, xdim), " ", dtype=str)
-    terminal_out[ydim//2:,:] = ASCII_MAP[1] #Draw floor
+    terminal_out[ydim//2:,:] = ascii_map[1] #Draw floor
     #Draw walls
     for column in range(xdim):
         camera = column / ydim - 1.0
@@ -87,8 +87,8 @@ def draw_terminal_out(terminal):
         shade = int(np.clip(wall_dis, 0, 11))
         shade = 11 - shade
         #Draw a column
-        terminal_out[line_start:line_end, column] = ASCII_MAP[shade + 4]\
-                                     if side == 1 else ASCII_MAP[shade + 5]
+        terminal_out[line_start:line_end, column] = ascii_map[shade + 4]\
+                                     if side == 1 else ascii_map[shade + 5]
     terminal_out[5,2:9] = np.array(list(f'{xdim:03},{ydim:03}')) #for testing
     terminal_out[7,2:9] = np.array(list(f'{map_x:03},{map_y:03}'))
     #print to terminal_out
