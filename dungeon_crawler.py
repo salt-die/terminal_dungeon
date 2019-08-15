@@ -43,8 +43,8 @@ def draw_terminal_out(terminal):
         ray_y_dir = PLAYER.y_dir + PLAYER.y_plane * camera + .0000000000001
         map_x = int(ray_x)
         map_y = int(ray_y)
-        delta_x = np.sqrt(1.0 + ray_y_dir**2 / ray_x_dir**2)
-        delta_y = np.sqrt(1.0 + ray_x_dir**2 / ray_y_dir**2)
+        delta_x = abs(1/ray_x_dir)
+        delta_y = abs(1/ray_y_dir)
         if ray_x_dir < 0:
             step_x = -1
             side_x_dis = (ray_x - map_x) * delta_x
@@ -175,6 +175,7 @@ def move():
 
 def main(terminal):
     init_curses(terminal)
+    init_pygame()
     clock = pygame.time.Clock()
     GAME.world_map = load_map("map1")
     while GAME.running:
@@ -184,6 +185,11 @@ def main(terminal):
     clock.tick(40)
     pygame.quit()
 
+def init_pygame():
+    pygame.init()
+    pygame.display.set_mode((305, 2))
+    pygame.display.set_caption('Focus this window to move.')
+
 def init_curses(terminal):
     curses.noecho()
     curses.curs_set(0)
@@ -192,6 +198,4 @@ def init_curses(terminal):
     terminal.clear()
 
 if __name__ == "__main__":
-    pygame.init()
-    pygame.display.set_mode((35, 2))
     curses.wrapper(main)
