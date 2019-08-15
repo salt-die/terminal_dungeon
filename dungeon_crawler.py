@@ -5,8 +5,8 @@ A terminal based ray-casting engine.
 Make sure the pygame window is focused for input events to be received.
 """
 import types
-import curses
 import pygame
+import curses
 import numpy as np
 
 GAME = types.SimpleNamespace(mouse_sensitivity=1., running=True,\
@@ -27,14 +27,16 @@ def load_map(map_name):
     with open(map_name+".txt", 'r') as a_map:
         world_map = [[int(char) for char in row]\
                       for row in a_map.read().splitlines()]
-    return world_map
+
+    return np.array(world_map)
 
 def load_textures(*texture_names):
     textures = []
     for name in texture_names:
         with open(name+".txt", 'r') as texture:
-            textures.append([[int(char) for char in row]\
-                              for row in texture.read().splitlines()])
+            pre_load = [[int(char) for char in row]\
+                        for row in texture.read().splitlines()]
+            textures.append(np.array(pre_load).T)
     return textures
 
 def close():
@@ -43,7 +45,7 @@ def close():
 
 def draw_terminal_out(terminal):
     ydim, xdim = terminal.getmaxyx() #Get current terminal size.
-    terminal_out = np.full((ydim, xdim), " ", dtype=str)
+    terminal_out = np.full((ydim, xdim), " ", dtype=str) #our screen buffer
     terminal_out[ydim//2:, :] = ASCII_MAP[1] #Draw floor
     #Draw walls
     for column in range(xdim):
@@ -115,14 +117,14 @@ def draw_terminal_out(terminal):
         for char in range(line_start, line_end):
             tex_y = int((char - line_start) / (line_end - line_start) *\
                         GAME.texture_height)
-            if not GAME.textures[texture_num][tex_y][tex_x]:
+            if not GAME.textures[texture_num][tex_x][tex_y]:
                 #can't figure out why char keeps going out of bounds
                 #hence the numpy clip
                 terminal_out[np.clip(char, None, ydim - 1)][column] = " " 
 
     terminal_out[5, 2:9] = np.array(list(f'{xdim:03},{ydim:03}')) #for testing
     terminal_out[7, 2:9] = np.array(list(f'{int(PLAYER.x_pos):03},{int(PLAYER.y_pos):03}'))
-    #print to terminal_out
+    #print to terminal
     for row_num, row in enumerate(terminal_out):
         terminal.addstr(row_num, 0, ''.join(row[:-1]))
     terminal.refresh()
