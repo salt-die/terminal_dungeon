@@ -7,7 +7,7 @@ import pygame
 import curses
 import numpy as np
 
-game = types.SimpleNamespace(mouse_sensitivity=1.)
+game = types.SimpleNamespace(mouse_sensitivity=1., running=True)
 
 keys=[False]*324
 
@@ -100,7 +100,7 @@ def user_input():
     for event in pygame.event.get():
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
-                return False
+                game.running = False
             keys[event.key] = True
         elif event.type == pygame.KEYUP:
             keys[event.key] = False
@@ -173,14 +173,13 @@ def user_input():
                                                  player.speed)]:
             player.y_pos -= perp_y_dir * player.speed
 
-    return True
-
 def main(terminal):
-    terminal = init_curses(terminal)
+    init_curses(terminal)
     clock = pygame.time.Clock()
     game.world_map = load_map("map1")
-    while user_input():
+    while game.running:
         draw_terminal_out(terminal)
+        user_input()
     clock.tick(40)
     pygame.quit()
 
@@ -190,7 +189,6 @@ def init_curses(terminal):
     curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
     terminal.attron(curses.color_pair(1))
     terminal.clear()
-    return terminal
 
 if __name__ == "__main__":
     pygame.init()
