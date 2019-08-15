@@ -9,25 +9,49 @@ import pygame
 import curses
 import numpy as np
 
+class Player:
+    def __init__(self, x_pos=5., y_pos=5., x_dir=1., y_dir=0.,\
+                 x_plane=0., y_plane=.3):
+        self.x = x_pos
+        self.y = y_pos
+        self.x_dir = x_dir
+        self.y_dir = y_dir
+        self.x_plane = x_plane
+        self.y_plane = y_plane
+        self.speed = .03
+        self.rotate_speed = .008
+        self.right = np.array([[np.cos(self.rotate_speed),\
+                                np.sin(self.rotate_speed)],\
+                               [-np.sin(self.rotate_speed),\
+                                np.cos(self.rotate_speed)]])
+    
+        self.left = np.array([[np.cos(-self.rotate_speed),\
+                               np.sin(-self.rotate_speed)],\
+                              [-np.sin(-self.rotate_speed),\
+                                np.cos(-self.rotate_speed)]])
+
+    def turn(self, left):
+        self.x_dir, self.y_dir = np.array([self.x_dir, self.y_dir]) @\
+                                 (self.left if left else self.right)
+        self.x_plane, self.y_plane = np.array([self.x_plane, self.y_plane]) @\
+                                     (self.left if left else self.right)
+
+        
+        
+        
 GAME = types.SimpleNamespace(mouse_sensitivity=1., running=True,\
                              texture_width=29, texture_height=21)
 
-PLAYER = types.SimpleNamespace(rotation=0.008, speed=0.03, x_pos=5.0,\
-                               y_pos=5.0, x_dir=1.0, y_dir=0.0, angle=np.pi/2,\
-                               x_plane=0.0, y_plane=0.3)
 KEYS = [False]*324
 
 ASCII_MAP = dict(enumerate(list(" .',:;clxokXdO0KN")))
-
-RIGHT_ROTATE = (np.cos(PLAYER.rotation), np.sin(PLAYER.rotation))
-LEFT_ROTATE = (np.cos(-PLAYER.rotation), np.sin(-PLAYER.rotation))
 
 def load_map(map_name):
     with open(map_name+".txt", 'r') as a_map:
         world_map = [[int(char) for char in row]\
                       for row in a_map.read().splitlines()]
 
-    return np.array(world_map)
+    return np.array(world_map).T
 
 def load_textures(*texture_names):
     textures = []
@@ -42,17 +66,17 @@ def close():
     pygame.display.quit()
     pygame.quit()
 
-def draw_terminal_out(terminal):
+def draw_terminal_out(terminal, player):
     ydim, xdim = terminal.getmaxyx() #Get current terminal size.
     terminal_out = np.full((ydim, xdim), " ", dtype=str) #our screen buffer
     terminal_out[ydim//2:, :] = ASCII_MAP[1] #Draw floor
     #Draw walls
     for column in range(xdim):
         camera = column / ydim - 1.0
-        ray_x = PLAYER.x_pos
-        ray_y = PLAYER.y_pos
-        ray_x_dir = PLAYER.x_dir + PLAYER.x_plane * camera
-        ray_y_dir = PLAYER.y_dir + PLAYER.y_plane * camera
+        ray_x = player.x
+        ray_y = player.y
+        ray_x_dir = player.x_dir + player.x_plane * camera
+        ray_y_dir = player.y_dir + player.y_plane * camera
         map_x = int(ray_x)
         map_y = int(ray_y)
         try:
@@ -113,9 +137,9 @@ def draw_terminal_out(terminal):
         #Texturing
         texture_num = GAME.world_map[map_x][map_y] - 1
         if side:
-            wall_x = PLAYER.y_pos + wall_dis * ray_y_dir
+            wall_x = player.y + wall_dis * ray_y_dir
         else:
-            wall_x = PLAYER.x_pos + wall_dis * ray_x_dir
+            wall_x = player.x + wall_dis * ray_x_dir
         wall_x -= np.floor(wall_x)
         tex_x = int(wall_x * GAME.texture_width)
         if (side and ray_x_dir > 0) or (not side and ray_y_dir < 0):
@@ -130,7 +154,7 @@ def draw_terminal_out(terminal):
                 terminal_out[np.clip(char, None, ydim - 1)][column] = " "
 
     terminal_out[5, 2:9] = np.array(list(f'{xdim:03},{ydim:03}')) #for testing
-    terminal_out[7, 2:9] = np.array(list(f'{int(PLAYER.x_pos):03},{int(PLAYER.y_pos):03}'))
+    terminal_out[7, 2:9] = np.array(list(f'{int(player.x):03},{int(player.y):03}'))
     #print to terminal
     for row_num, row in enumerate(terminal_out):
         terminal.addstr(row_num, 0, ''.join(row[:-1]))
@@ -145,74 +169,56 @@ def user_input():
         elif event.type == pygame.KEYUP:
             KEYS[event.key] = False
 
-def move():
+def move(player):
     if KEYS[pygame.K_LEFT] or KEYS[pygame.K_a]:
-        old_x_dir = PLAYER.x_dir
-        PLAYER.x_dir = PLAYER.x_dir * LEFT_ROTATE[0] -\
-                       PLAYER.y_dir * LEFT_ROTATE[1]
-        PLAYER.y_dir = old_x_dir * LEFT_ROTATE[1] + \
-                       PLAYER.y_dir * LEFT_ROTATE[0]
-        old_x_plane = PLAYER.x_plane
-        PLAYER.x_plane = PLAYER.x_plane * LEFT_ROTATE[0] -\
-                         PLAYER.y_plane * LEFT_ROTATE[1]
-        PLAYER.y_plane = old_x_plane * LEFT_ROTATE[1] +\
-                         PLAYER.y_plane * LEFT_ROTATE[0]
+        player.turn()
 
     if KEYS[pygame.K_RIGHT] or KEYS[pygame.K_d]:
-        old_x_dir = PLAYER.x_dir
-        PLAYER.x_dir = PLAYER.x_dir * RIGHT_ROTATE[0] -\
-                       PLAYER.y_dir * RIGHT_ROTATE[1]
-        PLAYER.y_dir = old_x_dir * RIGHT_ROTATE[1] + \
-                       PLAYER.y_dir * RIGHT_ROTATE[0]
-        old_x_plane = PLAYER.x_plane
-        PLAYER.x_plane = PLAYER.x_plane * RIGHT_ROTATE[0] - \
-                         PLAYER.y_plane * RIGHT_ROTATE[1]
-        PLAYER.y_plane = old_x_plane * RIGHT_ROTATE[1] +\
-                         PLAYER.y_plane * RIGHT_ROTATE[0]
+        player.turn(False)
 
     if KEYS[pygame.K_UP] or KEYS[pygame.K_w]:
-        if not GAME.world_map[int(PLAYER.x_pos +\
-                                  PLAYER.x_dir *\
-                                  PLAYER.speed)][int(PLAYER.y_pos)]:
-            PLAYER.x_pos += PLAYER.x_dir * PLAYER.speed
-        if not GAME.world_map[int(PLAYER.x_pos)][int(PLAYER.y_pos +\
-                                                 PLAYER.y_dir *\
-                                                 PLAYER.speed)]:
-            PLAYER.y_pos += PLAYER.y_dir * PLAYER.speed
+        if not GAME.world_map[int(player.x +\
+                                  player.x_dir *\
+                                  player.speed)][int(player.y)]:
+            player.x += player.x_dir * player.speed
+        if not GAME.world_map[int(player.x)][int(player.y +\
+                                                 player.y_dir *\
+                                                 player.speed)]:
+            player.y += player.y_dir * player.speed
 
     if KEYS[pygame.K_DOWN] or KEYS[pygame.K_s]:
-        if not GAME.world_map[int(PLAYER.x_pos -\
-                                  PLAYER.x_dir *\
-                                  PLAYER.speed)][int(PLAYER.y_pos)]:
-            PLAYER.x_pos -= PLAYER.x_dir * PLAYER.speed
-        if not GAME.world_map[int(PLAYER.x_pos)][int(PLAYER.y_pos -\
-                                                 PLAYER.y_dir *\
-                                                 PLAYER.speed)]:
-            PLAYER.y_pos -= PLAYER.y_dir * PLAYER.speed
+        if not GAME.world_map[int(player.x -\
+                                  player.x_dir *\
+                                  player.speed)][int(player.y)]:
+            player.x -= player.x_dir * player.speed
+        if not GAME.world_map[int(player.x)][int(player.y -\
+                                                 player.y_dir *\
+                                                 player.speed)]:
+            player.y -= player.y_dir * player.speed
 
     if KEYS[pygame.K_q]:
-        perp_x_dir = PLAYER.y_dir
-        perp_y_dir = -PLAYER.x_dir
-        if not GAME.world_map[int(PLAYER.x_pos +\
+        perp_x_dir = player.y_dir
+        perp_y_dir = -player.x_dir
+        if not GAME.world_map[int(player.x +\
                                   perp_x_dir *\
-                                  PLAYER.speed)][int(PLAYER.y_pos)]:
-            PLAYER.x_pos += perp_x_dir * PLAYER.speed
-        if not GAME.world_map[int(PLAYER.x_pos)][int(PLAYER.y_pos +\
+                                  player.speed)][int(player.y)]:
+            player.x += perp_x_dir * player.speed
+        if not GAME.world_map[int(player.x)][int(player.y +\
                                                  perp_y_dir *\
-                                                 PLAYER.speed)]:
-            PLAYER.y_pos += perp_y_dir * PLAYER.speed
+                                                 player.speed)]:
+            player.y += perp_y_dir * player.speed
 
     if KEYS[pygame.K_e]:
-        perp_x_dir = PLAYER.y_dir
-        perp_y_dir = -PLAYER.x_dir
-        if not GAME.world_map[int(PLAYER.x_pos -\
+        perp_x_dir = player.y_dir
+        perp_y_dir = -player.x_dir
+        if not GAME.world_map[int(player.x -\
                                   perp_x_dir *\
-                                  PLAYER.speed)][int(PLAYER.y_pos)]:
-            PLAYER.x_pos -= perp_x_dir * PLAYER.speed
-        if not GAME.world_map[int(PLAYER.x_pos)][int(PLAYER.y_pos -\
+                                  player.speed)][int(player.y)]:
+            player.x -= perp_x_dir * player.speed
+        if not GAME.world_map[int(player.x)][int(player.y -\
                                                  perp_y_dir *\
-                                                 PLAYER.speed)]:
-            PLAYER.y_pos -= perp_y_dir * PLAYER.speed
+                                                 player.speed)]:
+            player.y -= perp_y_dir * player.speed
 
 def main(terminal):
     init_curses(terminal)
@@ -220,10 +226,11 @@ def main(terminal):
     clock = pygame.time.Clock()
     GAME.world_map = load_map("map1")
     GAME.textures = load_textures("texture1",)
+    player = Player()
     while GAME.running:
-        draw_terminal_out(terminal)
+        draw_terminal_out(terminal, player)
         user_input()
-        move()
+        move(player)
     clock.tick(40)
     pygame.quit()
 
