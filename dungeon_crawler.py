@@ -115,8 +115,10 @@ def main(stdscreen):
 
         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
             old_x_dir = player.x_dir
-            player.x_dir = player.x_dir * left_rotate[0] - player.y_dir * left_rotate[1]
-            player.y_dir = old_x_dir * left_rotate[1] + player.y_dir * left_rotate[0]
+            player.x_dir = player.x_dir * left_rotate[0] -\
+                           player.y_dir * left_rotate[1]
+            player.y_dir = old_x_dir * left_rotate[1] + \
+                           player.y_dir * left_rotate[0]
             old_x_plane = player.x_plane
             player.x_plane = player.x_plane * left_rotate[0] -\
                              player.y_plane * left_rotate[1]
@@ -125,8 +127,10 @@ def main(stdscreen):
 
         if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
             old_x_dir = player.x_dir
-            player.x_dir = player.x_dir * right_rotate[0] - player.y_dir * right_rotate[1]
-            player.y_dir = old_x_dir * right_rotate[1] + player.y_dir * right_rotate[0]
+            player.x_dir = player.x_dir * right_rotate[0] -\
+                           player.y_dir * right_rotate[1]
+            player.y_dir = old_x_dir * right_rotate[1] + \
+                           player.y_dir * right_rotate[0]
             old_x_plane = player.x_plane
             player.x_plane = player.x_plane * right_rotate[0] - \
                              player.y_plane * right_rotate[1]
