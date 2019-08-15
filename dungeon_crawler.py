@@ -102,14 +102,12 @@ def draw_terminal_out(terminal):
         #Texturing
         texture_num = GAME.world_map[map_x][map_y] - 1
         if side:
-            wall_x = PLAYER.y_pos + wall_dis * ray_x
+            wall_x = PLAYER.y_pos + wall_dis * ray_y_dir
         else:
-            wall_x = PLAYER.x_pos + wall_dis * ray_y
+            wall_x = PLAYER.x_pos + wall_dis * ray_x_dir
         wall_x -= np.floor(wall_x)
         tex_x = int(wall_x * GAME.texture_width)
-        if side and ray_x_dir > 0:
-            tex_x = GAME.texture_width - tex_x - 1
-        elif not side and ray_y_dir < 0:
+        if (side and ray_x_dir > 0) or (not side and ray_y_dir < 0):
             tex_x = GAME.texture_width - tex_x - 1
         #Replace non-" " characters with " " according to texture
         for char in range(line_start, line_end):
