@@ -117,7 +117,6 @@ class Renderer:
             line_height = int(self.height / wall_dis)
         except ZeroDivisionError:
             line_height = float("inf")
-        #Casting is done, drawing starts
         line_start = int((-line_height * self.wall_height + self.height) /\
                          self.wall_y)
         line_start = np.clip(line_start, 0, None)
