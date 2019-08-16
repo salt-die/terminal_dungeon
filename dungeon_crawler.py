@@ -39,6 +39,25 @@ class Player:
         self.x_plane, self.y_plane = np.array([self.x_plane, self.y_plane]) @\
                                      (self.left if left else self.right)
 
+    def move(self, forward=1):
+        def next_pos(coord, direction):
+            return coord + forward * direction * self.speed
+        next_x_step = next_pos(self.x, self.x_dir)
+        next_y_step = next_pos(self.y, self.y_dir)
+        if not GAME.world_map[int(next_x_step)][int(self.y)]:
+            self.x = next_x_step
+        if not GAME.world_map[int(self.x)][int(next_y_step)]:
+            self.y = next_y_step
+
+    def strafe(self, left=1):
+        def next_pos(coord, direction):
+            return coord + left * direction * self.speed
+        next_x_step = next_pos(self.x, self.y_dir)
+        next_y_step = next_pos(self.y, -self.x_dir)
+        if not GAME.world_map[int(next_x_step)][int(self.y)]:
+            self.x = next_x_step
+        if not GAME.world_map[int(self.x)][int(next_y_step)]:
+            self.y = next_y_step
 
 class Renderer:
     def __init__(self, screen, player):
@@ -180,53 +199,16 @@ def user_input():
 def move(player):
     if KEYS[pygame.K_LEFT] or KEYS[pygame.K_a]:
         player.turn()
-
     if KEYS[pygame.K_RIGHT] or KEYS[pygame.K_d]:
         player.turn(False)
-
     if KEYS[pygame.K_UP] or KEYS[pygame.K_w]:
-        if not GAME.world_map[int(player.x +\
-                                  player.x_dir *\
-                                  player.speed)][int(player.y)]:
-            player.x += player.x_dir * player.speed
-        if not GAME.world_map[int(player.x)][int(player.y +\
-                                                 player.y_dir *\
-                                                 player.speed)]:
-            player.y += player.y_dir * player.speed
-
+        player.move()
     if KEYS[pygame.K_DOWN] or KEYS[pygame.K_s]:
-        if not GAME.world_map[int(player.x -\
-                                  player.x_dir *\
-                                  player.speed)][int(player.y)]:
-            player.x -= player.x_dir * player.speed
-        if not GAME.world_map[int(player.x)][int(player.y -\
-                                                 player.y_dir *\
-                                                 player.speed)]:
-            player.y -= player.y_dir * player.speed
-
+        player.move(-1)
     if KEYS[pygame.K_q]:
-        perp_x_dir = player.y_dir
-        perp_y_dir = -player.x_dir
-        if not GAME.world_map[int(player.x +\
-                                  perp_x_dir *\
-                                  player.speed)][int(player.y)]:
-            player.x += perp_x_dir * player.speed
-        if not GAME.world_map[int(player.x)][int(player.y +\
-                                                 perp_y_dir *\
-                                                 player.speed)]:
-            player.y += perp_y_dir * player.speed
-
+        player.strafe()
     if KEYS[pygame.K_e]:
-        perp_x_dir = player.y_dir
-        perp_y_dir = -player.x_dir
-        if not GAME.world_map[int(player.x -\
-                                  perp_x_dir *\
-                                  player.speed)][int(player.y)]:
-            player.x -= perp_x_dir * player.speed
-        if not GAME.world_map[int(player.x)][int(player.y -\
-                                                 perp_y_dir *\
-                                                 player.speed)]:
-            player.y -= perp_y_dir * player.speed
+        player.strafe(-1)
 
 def main(screen):
     init_curses(screen)
