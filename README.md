@@ -5,7 +5,7 @@ Now with better textures:
 ![Crawler preview 2](preview2.gif)
 
 
-Dungeon Crawler
+Terminal Dungeon
 
 A Doom-like game that renders to ascii and outputs to terminal!
 
