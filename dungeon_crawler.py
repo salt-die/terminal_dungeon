@@ -61,7 +61,7 @@ class Renderer:
         self.ascii_map = dict(enumerate(list(" .',:;cxlokXdO0KN")))
         self.shades = len(self.ascii_map)
         self.max_range = 60
-        self.wall_height = 1.5 #Wall Height
+        self.wall_height = 1.5
         self.wall_width = 1.
         self.wall_y = 1.8 #Wall vertical placement
 
@@ -127,7 +127,7 @@ class Renderer:
         line_height = line_end - line_start
         #Shading
         shade = int(np.clip(wall_dis, 0, 20))
-        shade = (20 - shade) // 2 + (6 if side else 4)
+        shade = (20 - shade) // 2 + (6 if side else 4) #One side is brighter
         #Write column to a temporary buffer
         shade_buffer = [shade] * line_height
 
