@@ -64,8 +64,8 @@ class Renderer:
         self.ascii_map = dict(enumerate(list(" .',:;cxlokXdO0KN")))
         self.shades = len(self.ascii_map)
         self.max_range = 60 #Controls how far rays are cast.
-        self.wall_height = 1.5
-        self.wall_y = 1.8 #Wall vertical placement
+        self.wall_height = 1.
+        self.wall_y = 2. #Wall vertical placement
 
     def cast_ray(self, column):
         ray_angle = self.player.angle +\
@@ -144,7 +144,7 @@ class Renderer:
                 tex_y = int(i / line_height * texture_height)
                 shade_buffer[i] =\
                     np.clip(GAME.textures[texture_num][tex_x][tex_y] +val - 5,\
-                            0, self.shades - 1)
+                            1, self.shades - 1)
 
         #Convert shade values to ascii
         column_buffer = [self.ascii_map[val] for val in shade_buffer]
