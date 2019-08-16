@@ -21,7 +21,7 @@ substractive and above 5 are additive.
 This project wouldn't have been possible without the following valuable
 resources:
 
-![Lode's Computer Graphics Tutorial](https://lodev.org/cgtutor/raycasting.html)
+(https://lodev.org/cgtutor/raycasting.html "Lode's Computer Graphics Tutorial")
 
 ![PyRay - Python Raycasting Engine](https://github.com/oscr/PyRay)
 
