@@ -65,7 +65,7 @@ class Renderer:
         self.height, self.width = screen.getmaxyx()
         self.player = player
         self.buffer = np.full((self.height, self.width), " ", dtype=str)
-        self.ascii_map = dict(enumerate(list(" .':;<+*LtCa4Ud8Q0M@")))
+        self.ascii_map = dict(enumerate(list(" .,:;<+*LtCa4Ud8Q0M@")))
         self.shades = len(self.ascii_map)
         self.max_range = 60 #Controls how far rays are cast.
         self.wall_height = 1.
@@ -148,7 +148,7 @@ class Renderer:
                 tex_y = int(i / line_height * texture_height)
                 shade_buffer[i] =\
                     np.clip(2 * GAME.textures[texture_num][tex_x][tex_y] - 12\
-                            + val, 0, self.shades - 1)
+                            + val, 2, self.shades - 1)
 
         #Convert shade values to ascii
         column_buffer = [self.ascii_map[val] for val in shade_buffer]
@@ -166,8 +166,6 @@ class Renderer:
             if ray:
                 start, end, col_buffer = self.draw_column(*ray)
                 self.buffer[start:end, column] = col_buffer
-
-
 
     def render(self):
         for row_num, row in enumerate(self.buffer):
