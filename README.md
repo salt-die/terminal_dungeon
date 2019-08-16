@@ -19,13 +19,12 @@ IMPORTANT:
 Make sure the pygame window is focused for input events to be received.
 
 Depending on your terminal font, Renderer.ascii_map may need to be adjusted.
-
-Values stored in textures should range from 0-9.  Values below 6 are
-subtractive and above 6 are additive.
-
 If you'd like to make an ascii map more suitable to your terminal's font,
 check my Snippets repository for a script that grabs mean brightness of
 unicode characters.
+
+Values stored in textures should range from 0-9.  Values below 6 are
+subtractive and above 6 are additive.
 
 This project wouldn't have been possible without the following valuable
 resources:
