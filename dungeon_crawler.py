@@ -28,7 +28,7 @@ class Player:
         self.field_of_view = .3 #Somewhere between 0 and 1 is reasonable
         self.plane = self.field_of_view * plane
         self.speed = .03
-        self.rotate_speed = .008
+        self.rotate_speed = .01
         self.left = np.array([[np.cos(-self.rotate_speed),\
                                np.sin(-self.rotate_speed)],\
                               [-np.sin(-self.rotate_speed),\
@@ -50,17 +50,10 @@ class Player:
                     (self.pos + forward * self.angle * self.speed)
         if not GAME.world_map[tuple(next_step.astype(int))]:
             self.pos = next_step
-###Unvectorized version below, but allows sliding on walls.
-#        def next_pos(coord, direction):
-#            return coord + forward * direction * self.speed
-#        next_x_step = next_pos(self.pos[0], self.angle[1]) if strafe else\
-#                      next_pos(self.pos[0], self.angle[0])
-#        next_y_step = next_pos(self.pos[1], -self.angle[0]) if strafe else\
-#                      next_pos(self.pos[1], self.angle[1])
-#        if not GAME.world_map[int(next_x_step)][int(self.pos[1])]:
-#            self.pos[0] = next_x_step
-#        if not GAME.world_map[int(self.pos[0])][int(next_y_step)]:
-#            self.pos[1] = next_y_step
+        elif not GAME.world_map[int(next_step[0])][int(self.pos[1])]:
+            self.pos[0] = next_step[0]
+        elif not GAME.world_map[int(self.pos[0])][int(next_step[1])]:
+            self.pos[1] = next_step[1]
 
 class Renderer:
     def __init__(self, screen, player):
@@ -78,10 +71,10 @@ class Renderer:
         ray_angle = self.player.angle +\
                     self.player.plane * (column / self.height - 1)
         map_pos = self.player.pos.astype(int)
-
         with np.errstate(divide="ignore"):
             delta = abs(1 / ray_angle)
 
+        ###TODO: Vectorize code below======
         def step_side(ray_dir, ray, map_, delta):
             if ray_dir < 0:
                 return -1, (ray - map_) * delta
@@ -91,7 +84,6 @@ class Renderer:
                                        map_pos[0], delta[0])
         step_y, side_y_dis = step_side(ray_angle[1], self.player.pos[1],\
                                        map_pos[1], delta[1])
-
         #Distance to wall
         for i in range(self.max_range):
             if side_x_dis < side_y_dis:
@@ -113,12 +105,14 @@ class Renderer:
         else:
             wall_dis = (map_pos[1] - self.player.pos[1] + (1 - step_y) / 2)\
                        / ray_angle[1]
+        ###TODO: Vectorize code above======
+        return wall_dis, side, map_pos, ray_angle
 
+    def draw_column(self, wall_dis, side, map_pos, ray_angle):
         try:
             line_height = int(self.height / wall_dis)
         except ZeroDivisionError:
             line_height = float("inf")
-
         #Casting is done, drawing starts
         line_start = int((-line_height * self.wall_height + self.height) /\
                          self.wall_y)
@@ -152,11 +146,10 @@ class Renderer:
                     np.clip(GAME.textures[texture_num][tex_x][tex_y] +val - 5,\
                             0, self.shades - 1)
 
-        #Convert shade values to ascii and write to screen buffer
+        #Convert shade values to ascii
         column_buffer = [self.ascii_map[val] for val in shade_buffer]
         column_buffer = np.array(column_buffer, dtype=str)
-
-        self.buffer[line_start:line_end, column] = column_buffer
+        return line_start, line_end, column_buffer
 
     def update(self):
         #Clear buffer
@@ -165,7 +158,12 @@ class Renderer:
         self.buffer[self.height // 2 + 1:, :] = self.ascii_map[1]
         #Draw Columns
         for column in range(self.width-1):
-            self.cast_ray(column)
+            ray = self.cast_ray(column)
+            if ray:
+                start, end, col_buffer = self.draw_column(*ray)
+                self.buffer[start:end, column] = col_buffer
+
+
 
     def render(self):
         for row_num, row in enumerate(self.buffer):
