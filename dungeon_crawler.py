@@ -64,14 +64,12 @@ class Renderer:
         self.shades = len(self.ascii_map)
         self.max_range = 60 #Controls how far rays are cast.
         self.wall_height = 1.5
-        self.wall_width = 1.
         self.wall_y = 1.8 #Wall vertical placement
 
     def cast_ray(self, column):
-        camera = self.wall_width * column / self.height - 1.0
-        ray_origin = self.player.pos
-        ray_angle = self.player.angle + self.player.plane * camera
-        map_pos = ray_origin.astype(int)
+        ray_angle = self.player.angle +\
+                    self.player.plane * column / self.height
+        map_pos = self.player.pos.astype(int)
 
         def delta(angle_coor):
             try:
@@ -87,9 +85,9 @@ class Renderer:
                 return -1, (ray - map_) * delta
             return 1, (map_ + 1 - ray) * delta
 
-        step_x, side_x_dis = step_side(ray_angle[0], ray_origin[0],\
+        step_x, side_x_dis = step_side(ray_angle[0], self.player.pos[0],\
                                        map_pos[0], delta_x)
-        step_y, side_y_dis = step_side(ray_angle[1], ray_origin[1],\
+        step_y, side_y_dis = step_side(ray_angle[1], self.player.pos[1],\
                                        map_pos[1], delta_y)
 
         #Distance to wall
@@ -108,10 +106,10 @@ class Renderer:
                 return
         #Avoiding euclidean distance, to avoid fish-eye effect.
         if side:
-            wall_dis = (map_pos[0] - ray_origin[0] + (1 - step_x) / 2)\
+            wall_dis = (map_pos[0] - self.player.pos[0] + (1 - step_x) / 2)\
                        / ray_angle[0]
         else:
-            wall_dis = (map_pos[1] - ray_origin[1] + (1 - step_y) / 2)\
+            wall_dis = (map_pos[1] - self.player.pos[1] + (1 - step_y) / 2)\
                        / ray_angle[1]
 
         try:
@@ -125,7 +123,7 @@ class Renderer:
         line_start = np.clip(line_start, 0, None)
         line_end = int((line_height * self.wall_height + self.height) /\
                        self.wall_y)
-        line_end = np.clip(line_end, None, self.height - 1)
+        line_end = np.clip(line_end, None, self.height)
         line_height = line_end - line_start
         #Shading
         shade = int(np.clip(wall_dis, 0, 20))
