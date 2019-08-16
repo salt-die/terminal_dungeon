@@ -67,6 +67,8 @@ class Renderer:
         self.buffer = np.full((self.height, self.width), " ", dtype=str)
         self.ascii_map = dict(enumerate(list(" .',:;clxokXdO0KN")))
         self.max_range = 60
+        self.wall_scale = 1.5 #Wall Height
+        self.wall_y = 1.8 #Wall vertical placement
 
     def cast_ray(self, column):
         camera = column / self.height - 1.0
@@ -115,20 +117,25 @@ class Renderer:
             wall_dis = (map_x - ray_x + (1 - step_x) / 2) / ray_x_dir
         else:
             wall_dis = (map_y - ray_y + (1 - step_y) / 2) / ray_y_dir
+        
         try:
             line_height = int(self.height / wall_dis)
         except ZeroDivisionError:
             line_height = float("inf")
+        
         #Casting is done, drawing starts
-        WALL_SCALE , WALL_Y = 2, 1.8
-        line_start = int((-line_height * WALL_SCALE + self.height) / WALL_Y)
+        #We don't split this into a new method because of the number of
+        #shared variables.
+        line_start = int((-line_height * self.wall_scale + self.height) /\
+                         self.wall_y)
         line_start = np.clip(line_start, 0, None)
-        line_end = int((line_height / WALL_SCALE + self.height) / WALL_Y)
+        line_end = int((line_height * self.wall_scale + self.height) /\
+                       self.wall_y)
         line_end = np.clip(line_end, None, self.height - 1)
         #Shading
         shade = int(np.clip(wall_dis, 0, 20))
         shade = (20 - shade) // 2 + (6 if side else 4)
-
+        #Write column to a temporary buffer
         column_buffer = np.full(line_end - line_start, self.ascii_map[shade])
 
         #============================================================
@@ -157,12 +164,12 @@ class Renderer:
         #Clear buffer
         self.buffer = np.full((self.height, self.width), " ", dtype=str)
         #Draw floor
-        self.buffer[self.height // 2 + 1:, :] = self.ascii_map[1] #Draw floor
+        self.buffer[self.height // 2 + 1:, :] = self.ascii_map[1]
+        #Draw Columns
         for column in range(self.width-1):
             self.cast_ray(column)
 
     def render(self):
-        #print to terminal
         for row_num, row in enumerate(self.buffer):
             self.screen.addstr(row_num, 0, ''.join(row[:-1]))
         self.screen.refresh()
@@ -182,10 +189,6 @@ def load_textures(*texture_names):
                         for row in texture.read().splitlines()]
             textures.append(np.array(pre_load).T)
     return textures
-
-def close():
-    pygame.display.quit()
-    pygame.quit()
 
 def user_input():
     for event in pygame.event.get():
@@ -215,16 +218,16 @@ def main(screen):
     init_pygame()
     clock = pygame.time.Clock()
     GAME.world_map = load_map("map1")
-    GAME.textures = load_textures("texture1",)
+    GAME.textures = load_textures("texture2",)
     player = Player()
     renderer = Renderer(screen, player)
     while GAME.running:
-        #draw_terminal_out(screen, player)
         renderer.update()
         renderer.render()
         user_input()
         move(player)
     clock.tick(40)
+    pygame.display.quit()
     pygame.quit()
 
 def init_pygame():
