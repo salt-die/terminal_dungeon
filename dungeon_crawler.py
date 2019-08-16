@@ -43,9 +43,7 @@ class Renderer:
         self.player = player
         self.buffer = np.full((self.height, self.width), " ", dtype=str)
         self.ascii_map = dict(enumerate(list(" .',:;clxokXdO0KN")))
-        self.shades = len(self.ascii_map)
-        self.max_range = 30
-        self.wall_ratio = 1/2 #Height of walls, between 0 and 1
+        self.max_range = 60
     
     def cast_ray(self, column):
         camera = column / self.height - 1.0
@@ -76,8 +74,7 @@ class Renderer:
             step_y = 1
             side_y_dis = (map_y + 1.0 - ray_y) * delta_y
         #Distance to wall
-        hit = False
-        while not hit:
+        for i in range(self.max_range):
             if side_x_dis < side_y_dis:
                 side_x_dis += delta_x
                 map_x += step_x
@@ -87,7 +84,9 @@ class Renderer:
                 map_y += step_y
                 side = False
             if GAME.world_map[map_x][map_y]:
-                hit = True
+                break
+            if i == self.max_range - 1:
+                return
 
         #Avoiding euclidean distance, to avoid fish-eye effect.
         if side:
