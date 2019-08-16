@@ -37,22 +37,30 @@ class Player:
                                 np.sin(self.rotate_speed)],\
                                [-np.sin(self.rotate_speed),\
                                 np.cos(self.rotate_speed)]])
+        self.perp = np.array([[0., -1.],\
+                              [1., 0.]])
 
     def turn(self, left=True):
         self.angle = self.angle @ (self.left if left else self.right)
         self.plane = self.plane @ (self.left if left else self.right)
 
     def move(self, forward=1, strafe=False):
-        def next_pos(coord, direction):
-            return coord + forward * direction * self.speed
-        next_x_step = next_pos(self.pos[0], self.angle[1]) if strafe else\
-                      next_pos(self.pos[0], self.angle[0])
-        next_y_step = next_pos(self.pos[1], -self.angle[0]) if strafe else\
-                      next_pos(self.pos[1], self.angle[1])
-        if not GAME.world_map[int(next_x_step)][int(self.pos[1])]:
-            self.pos[0] = next_x_step
-        if not GAME.world_map[int(self.pos[0])][int(next_y_step)]:
-            self.pos[1] = next_y_step
+        next_step = (self.pos + forward * self.angle * self.speed @ self.perp)\
+                    if strafe else\
+                    (self.pos + forward * self.angle * self.speed)
+        if not GAME.world_map[tuple(next_step.astype(int))]:
+            self.pos = next_step
+###Unvectorized version below, but allows sliding on walls.
+#        def next_pos(coord, direction):
+#            return coord + forward * direction * self.speed
+#        next_x_step = next_pos(self.pos[0], self.angle[1]) if strafe else\
+#                      next_pos(self.pos[0], self.angle[0])
+#        next_y_step = next_pos(self.pos[1], -self.angle[0]) if strafe else\
+#                      next_pos(self.pos[1], self.angle[1])
+#        if not GAME.world_map[int(next_x_step)][int(self.pos[1])]:
+#            self.pos[0] = next_x_step
+#        if not GAME.world_map[int(self.pos[0])][int(next_y_step)]:
+#            self.pos[1] = next_y_step
 
 class Renderer:
     def __init__(self, screen, player):
@@ -68,17 +76,11 @@ class Renderer:
 
     def cast_ray(self, column):
         ray_angle = self.player.angle +\
-                    self.player.plane * column / self.height
+                    self.player.plane * (column / self.height - 1)
         map_pos = self.player.pos.astype(int)
 
-        def delta(angle_coor):
-            try:
-                return abs(1 / angle_coor)
-            except ZeroDivisionError:
-                return float("inf")
-
-        delta_x = delta(ray_angle[0])
-        delta_y = delta(ray_angle[1])
+        with np.errstate(divide="ignore"):
+            delta = abs(1 / ray_angle)
 
         def step_side(ray_dir, ray, map_, delta):
             if ray_dir < 0:
@@ -86,18 +88,18 @@ class Renderer:
             return 1, (map_ + 1 - ray) * delta
 
         step_x, side_x_dis = step_side(ray_angle[0], self.player.pos[0],\
-                                       map_pos[0], delta_x)
+                                       map_pos[0], delta[0])
         step_y, side_y_dis = step_side(ray_angle[1], self.player.pos[1],\
-                                       map_pos[1], delta_y)
+                                       map_pos[1], delta[1])
 
         #Distance to wall
         for i in range(self.max_range):
             if side_x_dis < side_y_dis:
-                side_x_dis += delta_x
+                side_x_dis += delta[0]
                 map_pos[0] += step_x
                 side = True
             else:
-                side_y_dis += delta_y
+                side_y_dis += delta[1]
                 map_pos[1] += step_y
                 side = False
             if GAME.world_map[map_pos[0]][map_pos[1]]:
