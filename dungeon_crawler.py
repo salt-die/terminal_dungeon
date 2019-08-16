@@ -2,6 +2,8 @@
 """
 A terminal based ray-casting engine.
 
+'esc' to exit
+'t' to turn off textures
 
 IMPORTANT:
 Make sure the pygame window is focused for input events to be received.
@@ -16,7 +18,7 @@ import curses
 import numpy as np
 import pygame
 
-GAME = types.SimpleNamespace(running=True, keys=[False]*324)
+GAME = types.SimpleNamespace(running=True, keys=[False]*324, textures_on=True)
 
 class Player:
     def __init__(self, pos=np.array([5., 5.]), angle=np.array([1., 0.]),\
@@ -60,7 +62,7 @@ class Renderer:
         self.buffer = np.full((self.height, self.width), " ", dtype=str)
         self.ascii_map = dict(enumerate(list(" .',:;cxlokXdO0KN")))
         self.shades = len(self.ascii_map)
-        self.max_range = 60
+        self.max_range = 60 #Controls how far rays are cast.
         self.wall_height = 1.5
         self.wall_width = 1.
         self.wall_y = 1.8 #Wall vertical placement
@@ -131,24 +133,24 @@ class Renderer:
         #Write column to a temporary buffer
         shade_buffer = [shade] * line_height
 
-        #============================================================
-        #Texturing -- Safe to comment out this block for fps increase
-        texture_num = GAME.world_map[map_pos[0]][map_pos[1]] - 1
-        texture_width, texture_height = GAME.textures[texture_num].shape
-        if side:
-            wall_x = self.player.pos[1] + wall_dis * ray_angle[1]
-        else:
-            wall_x = self.player.pos[0] + wall_dis * ray_angle[0]
-        wall_x -= np.floor(wall_x)
-        tex_x = int(wall_x * texture_width)
-        if (side and ray_angle[0] > 0) or (not side and ray_angle[1] < 0):
-            tex_x = texture_width - tex_x - 1
-        #Add or subtract texture values to shade values
-        for i, val in enumerate(shade_buffer):
-            tex_y = int(i / line_height * texture_height)
-            shade_buffer[i] = np.clip(GAME.textures[texture_num][tex_x][tex_y]\
-                                      +val - 5, 0, self.shades - 1)
-        #===========================================================
+        #Texturing
+        if GAME.textures_on:
+            texture_num = GAME.world_map[map_pos[0]][map_pos[1]] - 1
+            texture_width, texture_height = GAME.textures[texture_num].shape
+            if side:
+                wall_x = self.player.pos[1] + wall_dis * ray_angle[1]
+            else:
+                wall_x = self.player.pos[0] + wall_dis * ray_angle[0]
+            wall_x -= np.floor(wall_x)
+            tex_x = int(wall_x * texture_width)
+            if (side and ray_angle[0] > 0) or (not side and ray_angle[1] < 0):
+                tex_x = texture_width - tex_x - 1
+            #Add or subtract texture values to shade values
+            for i, val in enumerate(shade_buffer):
+                tex_y = int(i / line_height * texture_height)
+                shade_buffer[i] =\
+                    np.clip(GAME.textures[texture_num][tex_x][tex_y] +val - 5,\
+                            0, self.shades - 1)
 
         #Convert shade values to ascii and write to screen buffer
         column_buffer = [self.ascii_map[val] for val in shade_buffer]
@@ -191,6 +193,8 @@ def user_input():
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 GAME.running = False
+            elif event.key == pygame.K_t:
+                GAME.textures_on = not GAME.textures_on
             GAME.keys[event.key] = True
         elif event.type == pygame.KEYUP:
             GAME.keys[event.key] = False
