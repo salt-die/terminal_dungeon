@@ -218,7 +218,7 @@ def main(screen):
     init_pygame()
     clock = pygame.time.Clock()
     GAME.world_map = load_map("map1")
-    GAME.textures = load_textures("texture1",)
+    GAME.textures = load_textures("texture1","texture2")
     player = Player()
     renderer = Renderer(screen, player)
     while GAME.running:
