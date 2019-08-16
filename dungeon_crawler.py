@@ -2,26 +2,34 @@
 """
 A terminal based ray-casting engine.
 
+
+IMPORTANT:
 Make sure the pygame window is focused for input events to be received.
+
+Depending on your terminal font, Renderer.ascii_map may need to be adjusted.
+
+Values stored in textures should range from 0-9.  Values below 5 are
+substractive and above 5 are additive.
 """
 import types
 import pygame
 import curses
 import numpy as np
 
-GAME = types.SimpleNamespace(running=True, texture_width=29, texture_height=21)
+GAME = types.SimpleNamespace(running=True)
 
 KEYS = [False]*324
 
 class Player:
     def __init__(self, x_pos=5., y_pos=5., x_dir=1., y_dir=0.,\
-                 x_plane=0., y_plane=.3):
+                 x_plane=0., y_plane=1.):
         self.x = x_pos
         self.y = y_pos
         self.x_dir = x_dir
         self.y_dir = y_dir
-        self.x_plane = x_plane
-        self.y_plane = y_plane
+        self.field_of_view = .3 #Somewhere between 0 and 1 is reasonable
+        self.x_plane = self.field_of_view * x_plane 
+        self.y_plane = self.field_of_view * y_plane
         self.speed = .03
         self.rotate_speed = .008
         self.left = np.array([[np.cos(-self.rotate_speed),\
@@ -57,7 +65,8 @@ class Renderer:
         self.height, self.width = screen.getmaxyx()
         self.player = player
         self.buffer = np.full((self.height, self.width), " ", dtype=str)
-        self.ascii_map = dict(enumerate(list(" .',:;clxokXdO0KN")))
+        self.ascii_map = dict(enumerate(list(" .',:;cxlokXdO0KN")))
+        self.shades = len(self.ascii_map)
         self.max_range = 60
         self.wall_scale = 1.5 #Wall Height
         self.wall_y = 1.8 #Wall vertical placement
@@ -121,32 +130,36 @@ class Renderer:
         line_end = int((line_height * self.wall_scale + self.height) /\
                        self.wall_y)
         line_end = np.clip(line_end, None, self.height - 1)
+        line_height = line_end - line_start
         #Shading
         shade = int(np.clip(wall_dis, 0, 20))
         shade = (20 - shade) // 2 + (6 if side else 4)
         #Write column to a temporary buffer
-        column_buffer = np.full(line_end - line_start, self.ascii_map[shade])
+        shade_buffer = [shade] * line_height
 
         #============================================================
         #Texturing -- Safe to comment out this block for fps increase
         texture_num = GAME.world_map[map_x][map_y] - 1
+        texture_width, texture_height = GAME.textures[texture_num].shape
         if side:
             wall_x = self.player.y + wall_dis * ray_y_dir
         else:
             wall_x = self.player.x + wall_dis * ray_x_dir
         wall_x -= np.floor(wall_x)
-        tex_x = int(wall_x * GAME.texture_width)
+        tex_x = int(wall_x * texture_width)
         if (side and ray_x_dir > 0) or (not side and ray_y_dir < 0):
-            tex_x = GAME.texture_width - tex_x - 1
-        #Replace non-" " characters with " " according to texture
-        for char in range(line_end-line_start):
-            tex_y = int(char / (line_end - line_start) *\
-                        GAME.texture_height)
-            if not GAME.textures[texture_num][tex_x][tex_y]:
-                column_buffer[char] = " "
+            tex_x = texture_width - tex_x - 1
+        #Add or subtract texture values to shade values
+        for i, val in enumerate(shade_buffer):
+            tex_y = int(i / line_height * texture_height)
+            shade_buffer[i] = np.clip(GAME.textures[texture_num][tex_x][tex_y]\
+                                      +val - 5, 0, self.shades - 1)
         #===========================================================
-
-        #Write column buffer to screen buffer
+        
+        #Convert shade values to ascii and write to screen buffer
+        column_buffer = [self.ascii_map[val] for val in shade_buffer]
+        column_buffer = np.array(column_buffer, dtype=str)
+            
         self.buffer[line_start:line_end, column] = column_buffer
 
     def update(self):
@@ -207,7 +220,7 @@ def main(screen):
     init_pygame()
     clock = pygame.time.Clock()
     GAME.world_map = load_map("map1")
-    GAME.textures = load_textures("texture2",)
+    GAME.textures = load_textures("texture1",)
     player = Player()
     renderer = Renderer(screen, player)
     while GAME.running:
