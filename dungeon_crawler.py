@@ -10,8 +10,12 @@ Make sure the pygame window is focused for input events to be received.
 
 Depending on your terminal font, Renderer.ascii_map may need to be adjusted.
 
-Values stored in textures should range from 0-9.  Values below 5 are
-substractive and above 5 are additive.
+Values stored in textures should range from 0-9.  Values below 6 are
+substractive and above 6 are additive.
+
+If you'd like to make an ascii map more suitable to your terminal's font,
+check my Snippets repository for a script that grabs mean brightness of
+unicode characters.
 """
 import types
 import curses
@@ -61,7 +65,7 @@ class Renderer:
         self.height, self.width = screen.getmaxyx()
         self.player = player
         self.buffer = np.full((self.height, self.width), " ", dtype=str)
-        self.ascii_map = dict(enumerate(list(" .',:;cxlokXdO0KN")))
+        self.ascii_map = dict(enumerate(list(" .':;<+*LtCa4Ud8Q0M@")))
         self.shades = len(self.ascii_map)
         self.max_range = 60 #Controls how far rays are cast.
         self.wall_height = 1.
@@ -122,8 +126,8 @@ class Renderer:
         line_end = np.clip(line_end, None, self.height)
         line_height = line_end - line_start
         #Shading
-        shade = int(np.clip(wall_dis, 0, 20))
-        shade = (20 - shade) // 2 + (6 if side else 4) #One side is brighter
+        shade = int(np.clip(wall_dis, 0, 14))
+        shade = 14 - shade + (6 if side else 2) #One side is brighter
         #Write column to a temporary buffer
         shade_buffer = [shade] * line_height
 
@@ -143,8 +147,8 @@ class Renderer:
             for i, val in enumerate(shade_buffer):
                 tex_y = int(i / line_height * texture_height)
                 shade_buffer[i] =\
-                    np.clip(GAME.textures[texture_num][tex_x][tex_y] +val - 5,\
-                            1, self.shades - 1)
+                    np.clip(2 * GAME.textures[texture_num][tex_x][tex_y] - 12\
+                            + val, 0, self.shades - 1)
 
         #Convert shade values to ascii
         column_buffer = [self.ascii_map[val] for val in shade_buffer]
@@ -155,7 +159,7 @@ class Renderer:
         #Clear buffer
         self.buffer = np.full((self.height, self.width), " ", dtype=str)
         #Draw floor
-        self.buffer[self.height // 2 + 1:, :] = self.ascii_map[1]
+        self.buffer[self.height // 2:, :] = self.ascii_map[1]
         #Draw Columns
         for column in range(self.width-1):
             ray = self.cast_ray(column)
