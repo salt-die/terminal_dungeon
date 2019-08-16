@@ -39,21 +39,13 @@ class Player:
         self.x_plane, self.y_plane = np.array([self.x_plane, self.y_plane]) @\
                                      (self.left if left else self.right)
 
-    def move(self, forward=1):
+    def move(self, forward=1, strafe=False):
         def next_pos(coord, direction):
             return coord + forward * direction * self.speed
-        next_x_step = next_pos(self.x, self.x_dir)
-        next_y_step = next_pos(self.y, self.y_dir)
-        if not GAME.world_map[int(next_x_step)][int(self.y)]:
-            self.x = next_x_step
-        if not GAME.world_map[int(self.x)][int(next_y_step)]:
-            self.y = next_y_step
-
-    def strafe(self, left=1):
-        def next_pos(coord, direction):
-            return coord + left * direction * self.speed
-        next_x_step = next_pos(self.x, self.y_dir)
-        next_y_step = next_pos(self.y, -self.x_dir)
+        next_x_step = next_pos(self.x, self.y_dir) if strafe else\
+                      next_pos(self.x, self.x_dir)
+        next_y_step = next_pos(self.y, - self.x_dir) if strafe else\
+                      next_pos(self.y, self.y_dir)
         if not GAME.world_map[int(next_x_step)][int(self.y)]:
             self.x = next_x_step
         if not GAME.world_map[int(self.x)][int(next_y_step)]:
@@ -209,9 +201,9 @@ def move(player):
     if KEYS[pygame.K_DOWN] or KEYS[pygame.K_s]:
         player.move(-1)
     if KEYS[pygame.K_q]:
-        player.strafe()
+        player.move(strafe=True)
     if KEYS[pygame.K_e]:
-        player.strafe(-1)
+        player.move(-1, True)
 
 def main(screen):
     init_curses(screen)
