@@ -1,5 +1,9 @@
 ![Crawler preview](preview.gif)
 
+Now with better textures:
+
+![Crawler preview 2](preview2.gif)
+
 
 Dungeon Crawler
 
