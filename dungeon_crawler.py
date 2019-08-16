@@ -19,15 +19,12 @@ import pygame
 GAME = types.SimpleNamespace(running=True, keys=[False]*324)
 
 class Player:
-    def __init__(self, x_pos=5., y_pos=5., x_dir=1., y_dir=0.,\
-                 x_plane=0., y_plane=1.):
-        self.x = x_pos
-        self.y = y_pos
-        self.x_dir = x_dir
-        self.y_dir = y_dir
+    def __init__(self, pos=np.array([5., 5.]), angle=np.array([1., 0.]),\
+                 plane=np.array([0., 1.])):
+        self.pos = pos
+        self.angle = angle
         self.field_of_view = .3 #Somewhere between 0 and 1 is reasonable
-        self.x_plane = self.field_of_view * x_plane
-        self.y_plane = self.field_of_view * y_plane
+        self.plane = self.field_of_view * plane
         self.speed = .03
         self.rotate_speed = .008
         self.left = np.array([[np.cos(-self.rotate_speed),\
@@ -40,22 +37,20 @@ class Player:
                                 np.cos(self.rotate_speed)]])
 
     def turn(self, left=True):
-        self.x_dir, self.y_dir = np.array([self.x_dir, self.y_dir]) @\
-                                 (self.left if left else self.right)
-        self.x_plane, self.y_plane = np.array([self.x_plane, self.y_plane]) @\
-                                     (self.left if left else self.right)
+        self.angle = self.angle @ (self.left if left else self.right)
+        self.plane = self.plane @ (self.left if left else self.right)
 
     def move(self, forward=1, strafe=False):
         def next_pos(coord, direction):
             return coord + forward * direction * self.speed
-        next_x_step = next_pos(self.x, self.y_dir) if strafe else\
-                      next_pos(self.x, self.x_dir)
-        next_y_step = next_pos(self.y, -self.x_dir) if strafe else\
-                      next_pos(self.y, self.y_dir)
-        if not GAME.world_map[int(next_x_step)][int(self.y)]:
-            self.x = next_x_step
-        if not GAME.world_map[int(self.x)][int(next_y_step)]:
-            self.y = next_y_step
+        next_x_step = next_pos(self.pos[0], self.angle[1]) if strafe else\
+                      next_pos(self.pos[0], self.angle[0])
+        next_y_step = next_pos(self.pos[1], -self.angle[0]) if strafe else\
+                      next_pos(self.pos[1], self.angle[1])
+        if not GAME.world_map[int(next_x_step)][int(self.pos[1])]:
+            self.pos[0] = next_x_step
+        if not GAME.world_map[int(self.pos[0])][int(next_y_step)]:
+            self.pos[1] = next_y_step
 
 class Renderer:
     def __init__(self, screen, player):
@@ -66,54 +61,56 @@ class Renderer:
         self.ascii_map = dict(enumerate(list(" .',:;cxlokXdO0KN")))
         self.shades = len(self.ascii_map)
         self.max_range = 60
-        self.wall_scale = 1.5 #Wall Height
+        self.wall_height = 1.5 #Wall Height
+        self.wall_width = 1.
         self.wall_y = 1.8 #Wall vertical placement
 
     def cast_ray(self, column):
-        camera = column / self.height - 1.0
-        ray_x = self.player.x
-        ray_y = self.player.y
-        ray_x_dir = self.player.x_dir + self.player.x_plane * camera
-        ray_y_dir = self.player.y_dir + self.player.y_plane * camera
-        map_x = int(ray_x)
-        map_y = int(ray_y)
+        camera = self.wall_width * column / self.height - 1.0
+        ray_origin = self.player.pos
+        ray_angle = self.player.angle + self.player.plane * camera
+        map_pos = ray_origin.astype(int)
 
-        def delta(ray_dir):
+        def delta(angle_coor):
             try:
-                return abs(1 / ray_dir)
+                return abs(1 / angle_coor)
             except ZeroDivisionError:
                 return float("inf")
 
-        delta_x = delta(ray_x_dir)
-        delta_y = delta(ray_y_dir)
+        delta_x = delta(ray_angle[0])
+        delta_y = delta(ray_angle[1])
 
         def step_side(ray_dir, ray, map_, delta):
             if ray_dir < 0:
                 return -1, (ray - map_) * delta
             return 1, (map_ + 1 - ray) * delta
 
-        step_x, side_x_dis = step_side(ray_x_dir, ray_x, map_x, delta_x)
-        step_y, side_y_dis = step_side(ray_y_dir, ray_y, map_y, delta_y)
+        step_x, side_x_dis = step_side(ray_angle[0], ray_origin[0],\
+                                       map_pos[0], delta_x)
+        step_y, side_y_dis = step_side(ray_angle[1], ray_origin[1],\
+                                       map_pos[1], delta_y)
 
         #Distance to wall
         for i in range(self.max_range):
             if side_x_dis < side_y_dis:
                 side_x_dis += delta_x
-                map_x += step_x
+                map_pos[0] += step_x
                 side = True
             else:
                 side_y_dis += delta_y
-                map_y += step_y
+                map_pos[1] += step_y
                 side = False
-            if GAME.world_map[map_x][map_y]:
+            if GAME.world_map[map_pos[0]][map_pos[1]]:
                 break
             if i == self.max_range - 1:
                 return
         #Avoiding euclidean distance, to avoid fish-eye effect.
         if side:
-            wall_dis = (map_x - ray_x + (1 - step_x) / 2) / ray_x_dir
+            wall_dis = (map_pos[0] - ray_origin[0] + (1 - step_x) / 2)\
+                       / ray_angle[0]
         else:
-            wall_dis = (map_y - ray_y + (1 - step_y) / 2) / ray_y_dir
+            wall_dis = (map_pos[1] - ray_origin[1] + (1 - step_y) / 2)\
+                       / ray_angle[1]
 
         try:
             line_height = int(self.height / wall_dis)
@@ -121,10 +118,10 @@ class Renderer:
             line_height = float("inf")
 
         #Casting is done, drawing starts
-        line_start = int((-line_height * self.wall_scale + self.height) /\
+        line_start = int((-line_height * self.wall_height + self.height) /\
                          self.wall_y)
         line_start = np.clip(line_start, 0, None)
-        line_end = int((line_height * self.wall_scale + self.height) /\
+        line_end = int((line_height * self.wall_height + self.height) /\
                        self.wall_y)
         line_end = np.clip(line_end, None, self.height - 1)
         line_height = line_end - line_start
@@ -136,15 +133,15 @@ class Renderer:
 
         #============================================================
         #Texturing -- Safe to comment out this block for fps increase
-        texture_num = GAME.world_map[map_x][map_y] - 1
+        texture_num = GAME.world_map[map_pos[0]][map_pos[1]] - 1
         texture_width, texture_height = GAME.textures[texture_num].shape
         if side:
-            wall_x = self.player.y + wall_dis * ray_y_dir
+            wall_x = self.player.pos[1] + wall_dis * ray_angle[1]
         else:
-            wall_x = self.player.x + wall_dis * ray_x_dir
+            wall_x = self.player.pos[0] + wall_dis * ray_angle[0]
         wall_x -= np.floor(wall_x)
         tex_x = int(wall_x * texture_width)
-        if (side and ray_x_dir > 0) or (not side and ray_y_dir < 0):
+        if (side and ray_angle[0] > 0) or (not side and ray_angle[1] < 0):
             tex_x = texture_width - tex_x - 1
         #Add or subtract texture values to shade values
         for i, val in enumerate(shade_buffer):
