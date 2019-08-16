@@ -44,7 +44,7 @@ class Renderer:
         self.buffer = np.full((self.height, self.width), " ", dtype=str)
         self.ascii_map = dict(enumerate(list(" .',:;clxokXdO0KN")))
         self.max_range = 60
-    
+
     def cast_ray(self, column):
         camera = column / self.height - 1.0
         ray_x = self.player.x
@@ -87,7 +87,6 @@ class Renderer:
                 break
             if i == self.max_range - 1:
                 return
-
         #Avoiding euclidean distance, to avoid fish-eye effect.
         if side:
             wall_dis = (map_x - ray_x + (1 - step_x) / 2) / ray_x_dir
@@ -97,6 +96,7 @@ class Renderer:
             line_height = int(self.height / wall_dis)
         except ZeroDivisionError:
             line_height = float("inf")
+        #Casting is done, drawing starts
         WALL_SCALE , WALL_Y = 2, 1.8
         line_start = int((-line_height * WALL_SCALE + self.height) / WALL_Y)
         line_start = np.clip(line_start, 0, None)
@@ -106,10 +106,10 @@ class Renderer:
         shade = int(np.clip(wall_dis, 0, 20))
         shade = (20 - shade) // 2 + (6 if side else 4)
 
-        #Draw a column
-        self.buffer[line_start:line_end, column] = ASCII_MAP[shade]
+        column_buffer = np.full(line_end - line_start, ASCII_MAP[shade])
 
-        #Texturing
+        #============================================================
+        #Texturing -- Safe to comment out this block for fps increase
         texture_num = GAME.world_map[map_x][map_y] - 1
         if side:
             wall_x = self.player.y + wall_dis * ray_y_dir
@@ -120,14 +120,16 @@ class Renderer:
         if (side and ray_x_dir > 0) or (not side and ray_y_dir < 0):
             tex_x = GAME.texture_width - tex_x - 1
         #Replace non-" " characters with " " according to texture
-        for char in range(line_start, line_end):
-            tex_y = int((char - line_start) / (line_end - line_start) *\
+        for char in range(line_end-line_start):
+            tex_y = int(char / (line_end - line_start) *\
                         GAME.texture_height)
             if not GAME.textures[texture_num][tex_x][tex_y]:
-                #can't figure out why char keeps going out of bounds
-                #hence the numpy clip
-                self.buffer[np.clip(char, None, self.height - 1)][column] = " "
-    
+                column_buffer[char] = " "
+        #===========================================================
+
+        #Write column buffer to screen buffer
+        self.buffer[line_start:line_end, column] = column_buffer
+
     def update(self):
         #Clear buffer
         self.buffer = np.full((self.height, self.width), " ", dtype=str)
@@ -135,7 +137,7 @@ class Renderer:
         self.buffer[self.height // 2 + 1:, :] = ASCII_MAP[1] #Draw floor
         for column in range(self.width-1):
             self.cast_ray(column)
-    
+
     def render(self):
         #print to terminal
         for row_num, row in enumerate(self.buffer):
