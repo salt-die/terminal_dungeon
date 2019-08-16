@@ -12,13 +12,11 @@ Values stored in textures should range from 0-9.  Values below 5 are
 substractive and above 5 are additive.
 """
 import types
-import pygame
 import curses
 import numpy as np
+import pygame
 
-GAME = types.SimpleNamespace(running=True)
-
-KEYS = [False]*324
+GAME = types.SimpleNamespace(running=True, keys=[False]*324)
 
 class Player:
     def __init__(self, x_pos=5., y_pos=5., x_dir=1., y_dir=0.,\
@@ -28,7 +26,7 @@ class Player:
         self.x_dir = x_dir
         self.y_dir = y_dir
         self.field_of_view = .3 #Somewhere between 0 and 1 is reasonable
-        self.x_plane = self.field_of_view * x_plane 
+        self.x_plane = self.field_of_view * x_plane
         self.y_plane = self.field_of_view * y_plane
         self.speed = .03
         self.rotate_speed = .008
@@ -79,22 +77,21 @@ class Renderer:
         ray_y_dir = self.player.y_dir + self.player.y_plane * camera
         map_x = int(ray_x)
         map_y = int(ray_y)
-        
+
         def delta(ray_dir):
             try:
                 return abs(1 / ray_dir)
             except ZeroDivisionError:
                 return float("inf")
-        
+
         delta_x = delta(ray_x_dir)
         delta_y = delta(ray_y_dir)
-        
+
         def step_side(ray_dir, ray, map_, delta):
             if ray_dir < 0:
                 return -1, (ray - map_) * delta
-            else:
-                return 1, (map_ + 1 - ray) * delta
-            
+            return 1, (map_ + 1 - ray) * delta
+
         step_x, side_x_dis = step_side(ray_x_dir, ray_x, map_x, delta_x)
         step_y, side_y_dis = step_side(ray_y_dir, ray_y, map_y, delta_y)
 
@@ -117,12 +114,12 @@ class Renderer:
             wall_dis = (map_x - ray_x + (1 - step_x) / 2) / ray_x_dir
         else:
             wall_dis = (map_y - ray_y + (1 - step_y) / 2) / ray_y_dir
-        
+
         try:
             line_height = int(self.height / wall_dis)
         except ZeroDivisionError:
             line_height = float("inf")
-        
+
         #Casting is done, drawing starts
         line_start = int((-line_height * self.wall_scale + self.height) /\
                          self.wall_y)
@@ -155,11 +152,11 @@ class Renderer:
             shade_buffer[i] = np.clip(GAME.textures[texture_num][tex_x][tex_y]\
                                       +val - 5, 0, self.shades - 1)
         #===========================================================
-        
+
         #Convert shade values to ascii and write to screen buffer
         column_buffer = [self.ascii_map[val] for val in shade_buffer]
         column_buffer = np.array(column_buffer, dtype=str)
-            
+
         self.buffer[line_start:line_end, column] = column_buffer
 
     def update(self):
@@ -197,22 +194,22 @@ def user_input():
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 GAME.running = False
-            KEYS[event.key] = True
+            GAME.keys[event.key] = True
         elif event.type == pygame.KEYUP:
-            KEYS[event.key] = False
+            GAME.keys[event.key] = False
 
 def move(player):
-    if KEYS[pygame.K_LEFT] or KEYS[pygame.K_a]:
+    if GAME.keys[pygame.K_LEFT] or GAME.keys[pygame.K_a]:
         player.turn()
-    if KEYS[pygame.K_RIGHT] or KEYS[pygame.K_d]:
+    if GAME.keys[pygame.K_RIGHT] or GAME.keys[pygame.K_d]:
         player.turn(False)
-    if KEYS[pygame.K_UP] or KEYS[pygame.K_w]:
+    if GAME.keys[pygame.K_UP] or GAME.keys[pygame.K_w]:
         player.move()
-    if KEYS[pygame.K_DOWN] or KEYS[pygame.K_s]:
+    if GAME.keys[pygame.K_DOWN] or GAME.keys[pygame.K_s]:
         player.move(-1)
-    if KEYS[pygame.K_q]:
+    if GAME.keys[pygame.K_q]:
         player.move(strafe=True)
-    if KEYS[pygame.K_e]:
+    if GAME.keys[pygame.K_e]:
         player.move(-1, True)
 
 def main(screen):
