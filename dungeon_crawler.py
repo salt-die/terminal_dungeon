@@ -70,26 +70,25 @@ class Renderer:
         ray_y_dir = self.player.y_dir + self.player.y_plane * camera
         map_x = int(ray_x)
         map_y = int(ray_y)
-        try:
-            delta_x = abs(1/ray_x_dir)
-        except ZeroDivisionError:
-            delta_x = float("inf")
-        try:
-            delta_y = abs(1/ray_y_dir)
-        except ZeroDivisionError:
-            delta_y = float("inf")
-        if ray_x_dir < 0:
-            step_x = -1
-            side_x_dis = (ray_x - map_x) * delta_x
-        else:
-            step_x = 1
-            side_x_dis = (map_x + 1.0 - ray_x) * delta_x
-        if ray_y_dir < 0:
-            step_y = -1
-            side_y_dis = (ray_y - map_y) * delta_y
-        else:
-            step_y = 1
-            side_y_dis = (map_y + 1.0 - ray_y) * delta_y
+        
+        def delta(ray_dir):
+            try:
+                return abs(1 / ray_dir)
+            except ZeroDivisionError:
+                return float("inf")
+        
+        delta_x = delta(ray_x_dir)
+        delta_y = delta(ray_y_dir)
+        
+        def step_side(ray_dir, ray, map_, delta):
+            if ray_dir < 0:
+                return -1, (ray - map_) * delta
+            else:
+                return 1, (map_ + 1 - ray) * delta
+            
+        step_x, side_x_dis = step_side(ray_x_dir, ray_x, map_x, delta_x)
+        step_y, side_y_dis = step_side(ray_y_dir, ray_y, map_y, delta_y)
+
         #Distance to wall
         for i in range(self.max_range):
             if side_x_dis < side_y_dis:
@@ -116,8 +115,6 @@ class Renderer:
             line_height = float("inf")
         
         #Casting is done, drawing starts
-        #We don't split this into a new method because of the number of
-        #shared variables.
         line_start = int((-line_height * self.wall_scale + self.height) /\
                          self.wall_y)
         line_start = np.clip(line_start, 0, None)
