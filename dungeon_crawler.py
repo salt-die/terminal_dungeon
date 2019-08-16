@@ -20,63 +20,39 @@ class Player:
         self.y_plane = y_plane
         self.speed = .03
         self.rotate_speed = .008
-        self.right = np.array([[np.cos(self.rotate_speed),\
-                                np.sin(self.rotate_speed)],\
-                               [-np.sin(self.rotate_speed),\
-                                np.cos(self.rotate_speed)]])
-    
         self.left = np.array([[np.cos(-self.rotate_speed),\
                                np.sin(-self.rotate_speed)],\
                               [-np.sin(-self.rotate_speed),\
                                 np.cos(-self.rotate_speed)]])
+        self.right = np.array([[np.cos(self.rotate_speed),\
+                                np.sin(self.rotate_speed)],\
+                               [-np.sin(self.rotate_speed),\
+                                np.cos(self.rotate_speed)]])
 
-    def turn(self, left):
+    def turn(self, left=True):
         self.x_dir, self.y_dir = np.array([self.x_dir, self.y_dir]) @\
                                  (self.left if left else self.right)
         self.x_plane, self.y_plane = np.array([self.x_plane, self.y_plane]) @\
                                      (self.left if left else self.right)
 
-        
-        
-        
-GAME = types.SimpleNamespace(mouse_sensitivity=1., running=True,\
-                             texture_width=29, texture_height=21)
 
-KEYS = [False]*324
-
-ASCII_MAP = dict(enumerate(list(" .',:;clxokXdO0KN")))
-
-def load_map(map_name):
-    with open(map_name+".txt", 'r') as a_map:
-        world_map = [[int(char) for char in row]\
-                      for row in a_map.read().splitlines()]
-
-    return np.array(world_map).T
-
-def load_textures(*texture_names):
-    textures = []
-    for name in texture_names:
-        with open(name+".txt", 'r') as texture:
-            pre_load = [[int(char) for char in row]\
-                        for row in texture.read().splitlines()]
-            textures.append(np.array(pre_load).T)
-    return textures
-
-def close():
-    pygame.display.quit()
-    pygame.quit()
-
-def draw_terminal_out(terminal, player):
-    ydim, xdim = terminal.getmaxyx() #Get current terminal size.
-    terminal_out = np.full((ydim, xdim), " ", dtype=str) #our screen buffer
-    terminal_out[ydim//2:, :] = ASCII_MAP[1] #Draw floor
-    #Draw walls
-    for column in range(xdim):
-        camera = column / ydim - 1.0
-        ray_x = player.x
-        ray_y = player.y
-        ray_x_dir = player.x_dir + player.x_plane * camera
-        ray_y_dir = player.y_dir + player.y_plane * camera
+class Renderer:
+    def __init__(self, screen, player):
+        self.screen = screen
+        self.height, self.width = screen.getmaxyx()
+        self.player = player
+        self.buffer = np.full((self.height, self.width), " ", dtype=str)
+        self.ascii_map = dict(enumerate(list(" .',:;clxokXdO0KN")))
+        self.shades = len(self.ascii_map)
+        self.max_range = 30
+        self.wall_ratio = 1/2 #Height of walls, between 0 and 1
+    
+    def cast_ray(self, column):
+        camera = column / self.height - 1.0
+        ray_x = self.player.x
+        ray_y = self.player.y
+        ray_x_dir = self.player.x_dir + self.player.x_plane * camera
+        ray_y_dir = self.player.y_dir + self.player.y_plane * camera
         map_x = int(ray_x)
         map_y = int(ray_y)
         try:
@@ -119,27 +95,27 @@ def draw_terminal_out(terminal, player):
         else:
             wall_dis = (map_y - ray_y + (1 - step_y) / 2) / ray_y_dir
         try:
-            line_height = int(xdim / (wall_dis))
+            line_height = int(self.height / wall_dis)
         except ZeroDivisionError:
             line_height = float("inf")
-        line_start = -line_height // 2 + ydim // 2
+        WALL_SCALE , WALL_Y = 2, 1.8
+        line_start = int((-line_height * WALL_SCALE + self.height) / WALL_Y)
         line_start = np.clip(line_start, 0, None)
-        line_end = line_height // 2 + ydim // 2
-        line_end = np.clip(line_end, None, xdim - 1)
+        line_end = int((line_height / WALL_SCALE + self.height) / WALL_Y)
+        line_end = np.clip(line_end, None, self.height - 1)
         #Shading
         shade = int(np.clip(wall_dis, 0, 20))
-        shade = (20 - shade) // 2
+        shade = (20 - shade) // 2 + (6 if side else 4)
 
         #Draw a column
-        terminal_out[line_start:line_end, column] = ASCII_MAP[shade + 6]\
-                                             if side else ASCII_MAP[shade + 4]
+        self.buffer[line_start:line_end, column] = ASCII_MAP[shade]
 
         #Texturing
         texture_num = GAME.world_map[map_x][map_y] - 1
         if side:
-            wall_x = player.y + wall_dis * ray_y_dir
+            wall_x = self.player.y + wall_dis * ray_y_dir
         else:
-            wall_x = player.x + wall_dis * ray_x_dir
+            wall_x = self.player.x + wall_dis * ray_x_dir
         wall_x -= np.floor(wall_x)
         tex_x = int(wall_x * GAME.texture_width)
         if (side and ray_x_dir > 0) or (not side and ray_y_dir < 0):
@@ -151,14 +127,47 @@ def draw_terminal_out(terminal, player):
             if not GAME.textures[texture_num][tex_x][tex_y]:
                 #can't figure out why char keeps going out of bounds
                 #hence the numpy clip
-                terminal_out[np.clip(char, None, ydim - 1)][column] = " "
+                self.buffer[np.clip(char, None, self.height - 1)][column] = " "
+    
+    def update(self):
+        #Clear buffer
+        self.buffer = np.full((self.height, self.width), " ", dtype=str)
+        #Draw floor
+        self.buffer[self.height // 2 + 1:, :] = ASCII_MAP[1] #Draw floor
+        for column in range(self.width-1):
+            self.cast_ray(column)
+    
+    def render(self):
+        #print to terminal
+        for row_num, row in enumerate(self.buffer):
+            self.screen.addstr(row_num, 0, ''.join(row[:-1]))
+        self.screen.refresh()
 
-    terminal_out[5, 2:9] = np.array(list(f'{xdim:03},{ydim:03}')) #for testing
-    terminal_out[7, 2:9] = np.array(list(f'{int(player.x):03},{int(player.y):03}'))
-    #print to terminal
-    for row_num, row in enumerate(terminal_out):
-        terminal.addstr(row_num, 0, ''.join(row[:-1]))
-    terminal.refresh()
+GAME = types.SimpleNamespace(running=True, texture_width=29, texture_height=21)
+
+KEYS = [False]*324
+
+ASCII_MAP = dict(enumerate(list(" .',:;clxokXdO0KN")))
+
+def load_map(map_name):
+    with open(map_name+".txt", 'r') as a_map:
+        world_map = [[int(char) for char in row]\
+                      for row in a_map.read().splitlines()]
+
+    return np.array(world_map).T
+
+def load_textures(*texture_names):
+    textures = []
+    for name in texture_names:
+        with open(name+".txt", 'r') as texture:
+            pre_load = [[int(char) for char in row]\
+                        for row in texture.read().splitlines()]
+            textures.append(np.array(pre_load).T)
+    return textures
+
+def close():
+    pygame.display.quit()
+    pygame.quit()
 
 def user_input():
     for event in pygame.event.get():
@@ -220,15 +229,18 @@ def move(player):
                                                  player.speed)]:
             player.y -= perp_y_dir * player.speed
 
-def main(terminal):
-    init_curses(terminal)
+def main(screen):
+    init_curses(screen)
     init_pygame()
     clock = pygame.time.Clock()
     GAME.world_map = load_map("map1")
     GAME.textures = load_textures("texture1",)
     player = Player()
+    renderer = Renderer(screen, player)
     while GAME.running:
-        draw_terminal_out(terminal, player)
+        #draw_terminal_out(screen, player)
+        renderer.update()
+        renderer.render()
         user_input()
         move(player)
     clock.tick(40)
@@ -239,12 +251,12 @@ def init_pygame():
     pygame.display.set_mode((305, 2))
     pygame.display.set_caption('Focus this window to move.')
 
-def init_curses(terminal):
+def init_curses(screen):
     curses.noecho()
     curses.curs_set(0)
     curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
-    terminal.attron(curses.color_pair(1))
-    terminal.clear()
+    screen.attron(curses.color_pair(1))
+    screen.clear()
 
 if __name__ == "__main__":
     curses.wrapper(main)
