@@ -50,7 +50,7 @@ class Player:
             return coord + forward * direction * self.speed
         next_x_step = next_pos(self.x, self.y_dir) if strafe else\
                       next_pos(self.x, self.x_dir)
-        next_y_step = next_pos(self.y, - self.x_dir) if strafe else\
+        next_y_step = next_pos(self.y, -self.x_dir) if strafe else\
                       next_pos(self.y, self.y_dir)
         if not GAME.world_map[int(next_x_step)][int(self.y)]:
             self.x = next_x_step
