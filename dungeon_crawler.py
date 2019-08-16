@@ -9,6 +9,10 @@ import pygame
 import curses
 import numpy as np
 
+GAME = types.SimpleNamespace(running=True, texture_width=29, texture_height=21)
+
+KEYS = [False]*324
+
 class Player:
     def __init__(self, x_pos=5., y_pos=5., x_dir=1., y_dir=0.,\
                  x_plane=0., y_plane=.3):
@@ -106,7 +110,7 @@ class Renderer:
         shade = int(np.clip(wall_dis, 0, 20))
         shade = (20 - shade) // 2 + (6 if side else 4)
 
-        column_buffer = np.full(line_end - line_start, ASCII_MAP[shade])
+        column_buffer = np.full(line_end - line_start, self.ascii_map[shade])
 
         #============================================================
         #Texturing -- Safe to comment out this block for fps increase
@@ -134,7 +138,7 @@ class Renderer:
         #Clear buffer
         self.buffer = np.full((self.height, self.width), " ", dtype=str)
         #Draw floor
-        self.buffer[self.height // 2 + 1:, :] = ASCII_MAP[1] #Draw floor
+        self.buffer[self.height // 2 + 1:, :] = self.ascii_map[1] #Draw floor
         for column in range(self.width-1):
             self.cast_ray(column)
 
@@ -143,12 +147,6 @@ class Renderer:
         for row_num, row in enumerate(self.buffer):
             self.screen.addstr(row_num, 0, ''.join(row[:-1]))
         self.screen.refresh()
-
-GAME = types.SimpleNamespace(running=True, texture_width=29, texture_height=21)
-
-KEYS = [False]*324
-
-ASCII_MAP = dict(enumerate(list(" .',:;clxokXdO0KN")))
 
 def load_map(map_name):
     with open(map_name+".txt", 'r') as a_map:
