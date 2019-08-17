@@ -69,6 +69,7 @@ class Renderer:
         self.max_hops = 60 #Controls how far rays are cast.
         self.wall_height = 1.
         self.wall_y = 2. #Wall vertical placement
+        self.floor_height = int(self.height / self.wall_y)
 
     def cast_ray(self, column):
         ray_angle = self.player.angle +\
@@ -76,7 +77,7 @@ class Renderer:
         map_pos = self.player.pos.astype(int)
         with np.errstate(divide="ignore"):
             delta = abs(1 / ray_angle)
-        step = np.sign(ray_angle)
+        step = 2 * np.heaviside(ray_angle, 1) - 1
         side_dis = step * (map_pos + (step + 1) / 2 - self.player.pos) * delta
         #Distance to wall
         for hops in range(self.max_hops):
@@ -93,10 +94,10 @@ class Renderer:
         return wall_dis, side, map_pos, ray_angle
 
     def draw_column(self, wall_dis, side, map_pos, ray_angle):
-        try:
+        if wall_dis == 0:
+            line_height = self.height
+        else:
             line_height = int(self.height / wall_dis)
-        except ZeroDivisionError:
-            line_height = float("inf")
         if line_height == 0:
             return 0, 0, [] #Draw nothing
         line_start = int((-line_height * self.wall_height + self.height) /\
@@ -105,7 +106,7 @@ class Renderer:
         line_end = int((line_height * self.wall_height + self.height) /\
                        self.wall_y)
         line_end = self.height if line_end > self.height else line_end
-        line_height = line_end - line_start
+        line_height = line_end - line_start #Correct off-by-one errors
         #Shading
         shade = int(15 if wall_dis > 15 else wall_dis)
         shade = 15 - shade + (0 if side else 4) #One side is brighter
@@ -142,7 +143,7 @@ class Renderer:
         #Clear buffer
         self.buffer = np.full((self.height, self.width), " ", dtype=str)
         #Draw floor
-        self.buffer[self.height // 2:, :] = self.ascii_map[1]
+        self.buffer[self.floor_height:, :] = self.ascii_map[1]
         #Draw Columns
         for column in range(self.width-1):
             ray = self.cast_ray(column)
