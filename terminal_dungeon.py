@@ -117,9 +117,9 @@ class Renderer:
             tex_num = GAME.world_map[map_pos[0]][map_pos[1]] - 1
             texture_width, texture_height = GAME.textures[tex_num].shape
             wall_x = (self.player.pos[-side + 1] +\
-                     wall_dis * ray_angle[-side + 1]) % 1
+                      wall_dis * ray_angle[-side + 1]) % 1
             tex_x = int(wall_x * texture_width)
-            if (not side and ray_angle[0] > 0) or (side and ray_angle[1] < 0):
+            if (side * 2 - 1) * ray_angle[side] < 0:
                 tex_x = texture_width - tex_x - 1
             #Add or subtract texture values to shade values
             tex_to_wall_ratio = 1 / line_height * texture_height
