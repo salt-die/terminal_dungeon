@@ -82,16 +82,15 @@ class Renderer:
         ###TODO: Vectorize code below======
         #Distance to wall
         for i in range(self.max_range):
-            n = 0 if side_dis[0] < side_dis[1] else 1
-            side_dis[n] += delta[n]
-            map_pos[n] += step[n]
-            side = not n
+            side = 0 if side_dis[0] < side_dis[1] else 1
+            side_dis[side] += delta[side]
+            map_pos[side] += step[side]
             if GAME.world_map[tuple(map_pos)]:
                 break
             if i == self.max_range - 1:
                 return
         #Avoiding euclidean distance, to avoid fish-eye effect.
-        if side:
+        if not side:
             wall_dis = (map_pos[0] - self.player.pos[0] + (1 - step[0]) / 2)\
                        / ray_angle[0]
         else:
@@ -114,7 +113,7 @@ class Renderer:
         line_height = line_end - line_start
         #Shading
         shade = int(np.clip(wall_dis, 0, 13))
-        shade = 13 - shade + (6 if side else 2) #One side is brighter
+        shade = 13 - shade + (2 if side else 6) #One side is brighter
         #Write column to a temporary buffer
         shade_buffer = [shade] * line_height
 
@@ -122,13 +121,13 @@ class Renderer:
         if GAME.textures_on:
             texture_num = GAME.world_map[map_pos[0]][map_pos[1]] - 1
             texture_width, texture_height = GAME.textures[texture_num].shape
-            if side:
+            if not side:
                 wall_x = self.player.pos[1] + wall_dis * ray_angle[1]
             else:
                 wall_x = self.player.pos[0] + wall_dis * ray_angle[0]
             wall_x -= np.floor(wall_x)
             tex_x = int(wall_x * texture_width)
-            if (side and ray_angle[0] > 0) or (not side and ray_angle[1] < 0):
+            if (not side and ray_angle[0] > 0) or (side and ray_angle[1] < 0):
                 tex_x = texture_width - tex_x - 1
             #Add or subtract texture values to shade values
             for i, val in enumerate(shade_buffer):
