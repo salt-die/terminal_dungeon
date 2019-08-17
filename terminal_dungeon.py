@@ -64,7 +64,7 @@ class Renderer:
         self.height, self.width = screen.getmaxyx()
         self.player = player
         self.buffer = np.full((self.height, self.width), " ", dtype=str)
-        self.ascii_map = dict(enumerate(list(" .,:;<+*LtCa4Ud8Q0M@")))
+        self.ascii_map = dict(enumerate(list(' .,:;<+*LtCa4Ud80QM@')))
         self.shades = len(self.ascii_map)
         self.max_range = 60 #Controls how far rays are cast.
         self.wall_height = 1.
@@ -97,6 +97,8 @@ class Renderer:
             line_height = int(self.height / wall_dis)
         except ZeroDivisionError:
             line_height = float("inf")
+        if line_height == 0:
+            return 0, 0, [] #Draw nothing
         line_start = int((-line_height * self.wall_height + self.height) /\
                          self.wall_y)
         line_start = np.clip(line_start, 0, None)
@@ -105,8 +107,8 @@ class Renderer:
         line_end = np.clip(line_end, None, self.height)
         line_height = line_end - line_start
         #Shading
-        shade = int(np.clip(wall_dis, 0, 13))
-        shade = 13 - shade + (2 if side else 6) #One side is brighter
+        shade = int(np.clip(wall_dis, 0, 15))
+        shade = 15 - shade + (0 if side else 4) #One side is brighter
         #Write column to a temporary buffer
         shade_buffer = [shade] * line_height
 
@@ -120,8 +122,9 @@ class Renderer:
             if (not side and ray_angle[0] > 0) or (side and ray_angle[1] < 0):
                 tex_x = texture_width - tex_x - 1
             #Add or subtract texture values to shade values
+            tex_to_wall_ratio = 1 / line_height * texture_height
             for i, val in enumerate(shade_buffer):
-                tex_y = int(i / line_height * texture_height)
+                tex_y = int(i * tex_to_wall_ratio)
                 shade_buffer[i] =\
                     np.clip(2 * GAME.textures[texture_num][tex_x][tex_y] - 12\
                             + val, 2, self.shades - 1)
