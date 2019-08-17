@@ -66,7 +66,7 @@ class Renderer:
         self.buffer = np.full((self.height, self.width), " ", dtype=str)
         self.ascii_map = dict(enumerate(list(' .,:;<+*LtCa4Ud80QM@')))
         self.shades = len(self.ascii_map)
-        self.max_range = 60 #Controls how far rays are cast.
+        self.max_steps = 60 #Controls how far rays are cast.
         self.wall_height = 1.
         self.wall_y = 2. #Wall vertical placement
 
@@ -79,13 +79,13 @@ class Renderer:
         step = np.sign(ray_angle)
         side_dis = step * (map_pos + (step + 1) / 2 - self.player.pos) * delta
         #Distance to wall
-        for i in range(self.max_range):
+        for step in range(self.max_steps):
             side = 0 if side_dis[0] < side_dis[1] else 1
             side_dis[side] += delta[side]
             map_pos[side] += step[side]
             if GAME.world_map[tuple(map_pos)]:
                 break
-            if i == self.max_range - 1:
+            if step == self.max_range - 1: #No walls in range
                 return
         #Avoiding euclidean distance, to avoid fish-eye effect.
         wall_dis = (map_pos[side] - self.player.pos[side] +\
