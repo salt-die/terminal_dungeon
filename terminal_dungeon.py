@@ -101,21 +101,21 @@ class Renderer:
             return 0, 0, [] #Draw nothing
         line_start = int((-line_height * self.wall_height + self.height) /\
                          self.wall_y)
-        line_start = np.clip(line_start, 0, None)
+        line_start = 0 if line_start < 0 else line_start
         line_end = int((line_height * self.wall_height + self.height) /\
                        self.wall_y)
-        line_end = np.clip(line_end, None, self.height)
+        line_end = self.height if line_end > self.height else line_end
         line_height = line_end - line_start
         #Shading
-        shade = int(np.clip(wall_dis, 0, 15))
+        shade = int(15 if wall_dis > 15 else wall_dis)
         shade = 15 - shade + (0 if side else 4) #One side is brighter
         #Write column to a temporary buffer
         shade_buffer = [shade] * line_height
 
         #Texturing
         if GAME.textures_on:
-            texture_num = GAME.world_map[map_pos[0]][map_pos[1]] - 1
-            texture_width, texture_height = GAME.textures[texture_num].shape
+            tex_num = GAME.world_map[map_pos[0]][map_pos[1]] - 1
+            texture_width, texture_height = GAME.textures[tex_num].shape
             wall_x = (self.player.pos[-side + 1] +\
                      wall_dis * ray_angle[-side + 1]) % 1
             tex_x = int(wall_x * texture_width)
@@ -125,9 +125,13 @@ class Renderer:
             tex_to_wall_ratio = 1 / line_height * texture_height
             for i, val in enumerate(shade_buffer):
                 tex_y = int(i * tex_to_wall_ratio)
-                shade_buffer[i] =\
-                    np.clip(GAME.textures[texture_num][tex_x][tex_y] - 6\
-                            + val, 2, self.shades - 1)
+                new_shade_val = GAME.textures[tex_num][tex_x][tex_y] - 6 + val
+                if new_shade_val < 2:
+                    shade_buffer[i] = 2
+                elif 0 <= new_shade_val <= self.shades - 1:
+                    shade_buffer[i] =  new_shade_val
+                else:
+                    shade_buffer[i] = self.shades - 1
 
         #Convert shade values to ascii
         column_buffer = [self.ascii_map[val] for val in shade_buffer]
