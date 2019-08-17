@@ -44,7 +44,7 @@ class Player:
                               [1., 0.]])
         self.jump_time = 18
         self.time_in_jump = 0
-        self.z = 0
+        self.z = 0.
         self.is_falling = False
 
     def jump(self):
@@ -56,7 +56,7 @@ class Player:
         if not self.is_falling:
             return
         if self.time_in_jump >= self.jump_time:
-            self.is_falling, self.time_in_jump, self.z = False, 0, 0
+            self.is_falling, self.time_in_jump, self.z = False, 0, 0.
             return
         scaled_dif = 2 - 4 * self.time_in_jump / self.jump_time
         self.z += scaled_dif
