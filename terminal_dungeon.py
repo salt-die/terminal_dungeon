@@ -227,7 +227,7 @@ class Controller():
             elif event.type == pygame.KEYUP:
                 self.keys[event.key] = False
 
-    def move(self):
+    def move_player(self):
         if self.keys[pygame.K_LEFT] or self.keys[pygame.K_a]:
             self.player.turn()
         if self.keys[pygame.K_RIGHT] or self.keys[pygame.K_d]:
@@ -247,7 +247,7 @@ class Controller():
     def update(self):
         self.renderer.update()
         self.user_input()
-        self.move()
+        self.move_player()
         self.player.fall()
         self.clock.tick(40)
 
