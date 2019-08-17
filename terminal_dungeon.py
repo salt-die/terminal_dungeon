@@ -85,6 +85,8 @@ class Renderer:
         self.height, self.width = screen.getmaxyx()
         self.player = player
         self.buffer = np.full((self.height, self.width), " ", dtype=str)
+        #It's safe to modify this ascii_map, but if the length changes, one
+        #will have to fiddle with shading and texturing constants.
         self.ascii_map = dict(enumerate(list(' .,:;<+*LtCa4U80dQM@')))
         self.shades = len(self.ascii_map)
         self.max_hops = 60 #Controls how far rays are cast.
