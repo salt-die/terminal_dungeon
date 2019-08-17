@@ -76,21 +76,16 @@ class Renderer:
         map_pos = self.player.pos.astype(int)
         with np.errstate(divide="ignore"):
             delta = abs(1 / ray_angle)
-
         step = np.sign(ray_angle)
         side_dis = step * (map_pos + (step + 1) / 2 - self.player.pos) * delta
 
         ###TODO: Vectorize code below======
         #Distance to wall
         for i in range(self.max_range):
-            if side_dis[0] < side_dis[1]:
-                side_dis[0] += delta[0]
-                map_pos[0] += step[0]
-                side = True
-            else:
-                side_dis[1] += delta[1]
-                map_pos[1] += step[1]
-                side = False
+            n = 0 if side_dis[0] < side_dis[1] else 1
+            side_dis[n] += delta[n]
+            map_pos[n] += step[n]
+            side = not n
             if GAME.world_map[tuple(map_pos)]:
                 break
             if i == self.max_range - 1:
