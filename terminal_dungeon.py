@@ -30,8 +30,8 @@ class Player:
         self.angle = angle
         self.field_of_view = .3 #Somewhere between 0 and 1 is reasonable
         self.plane = self.field_of_view * plane
-        self.speed = .03
-        self.rotate_speed = .01
+        self.speed = .05
+        self.rotate_speed = .03
         self.left = np.array([[np.cos(-self.rotate_speed),\
                                np.sin(-self.rotate_speed)],\
                               [-np.sin(-self.rotate_speed),\
@@ -64,7 +64,7 @@ class Renderer:
         self.height, self.width = screen.getmaxyx()
         self.player = player
         self.buffer = np.full((self.height, self.width), " ", dtype=str)
-        self.ascii_map = dict(enumerate(list(' .,:;<+*LtCa4Ud80QM@')))
+        self.ascii_map = dict(enumerate(list(' .,:;<+*LtaC4U80dQM@')))
         self.shades = len(self.ascii_map)
         self.max_hops = 60 #Controls how far rays are cast.
         self.wall_height = 1.
@@ -126,7 +126,7 @@ class Renderer:
             for i, val in enumerate(shade_buffer):
                 tex_y = int(i * tex_to_wall_ratio)
                 shade_buffer[i] =\
-                    np.clip(2 * GAME.textures[texture_num][tex_x][tex_y] - 12\
+                    np.clip(GAME.textures[texture_num][tex_x][tex_y] - 6\
                             + val, 2, self.shades - 1)
 
         #Convert shade values to ascii
