@@ -124,8 +124,8 @@ class Renderer:
         line_end = np.clip(line_end, None, self.height)
         line_height = line_end - line_start
         #Shading
-        shade = int(np.clip(wall_dis, 0, 14))
-        shade = 14 - shade + (6 if side else 2) #One side is brighter
+        shade = int(np.clip(wall_dis, 0, 13))
+        shade = 13 - shade + (6 if side else 2) #One side is brighter
         #Write column to a temporary buffer
         shade_buffer = [shade] * line_height
 
