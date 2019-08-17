@@ -77,36 +77,30 @@ class Renderer:
         with np.errstate(divide="ignore"):
             delta = abs(1 / ray_angle)
 
-        ###TODO: Vectorize code below======
-        def step_side(ray_dir, ray, map_, delta):
-            if ray_dir < 0:
-                return -1, (ray - map_) * delta
-            return 1, (map_ + 1 - ray) * delta
+        step = np.sign(ray_angle)
+        side_dis = step * (map_pos + (step + 1) / 2 - self.player.pos) * delta
 
-        step_x, side_x_dis = step_side(ray_angle[0], self.player.pos[0],\
-                                       map_pos[0], delta[0])
-        step_y, side_y_dis = step_side(ray_angle[1], self.player.pos[1],\
-                                       map_pos[1], delta[1])
+        ###TODO: Vectorize code below======
         #Distance to wall
         for i in range(self.max_range):
-            if side_x_dis < side_y_dis:
-                side_x_dis += delta[0]
-                map_pos[0] += step_x
+            if side_dis[0] < side_dis[1]:
+                side_dis[0] += delta[0]
+                map_pos[0] += step[0]
                 side = True
             else:
-                side_y_dis += delta[1]
-                map_pos[1] += step_y
+                side_dis[1] += delta[1]
+                map_pos[1] += step[1]
                 side = False
-            if GAME.world_map[map_pos[0]][map_pos[1]]:
+            if GAME.world_map[tuple(map_pos)]:
                 break
             if i == self.max_range - 1:
                 return
         #Avoiding euclidean distance, to avoid fish-eye effect.
         if side:
-            wall_dis = (map_pos[0] - self.player.pos[0] + (1 - step_x) / 2)\
+            wall_dis = (map_pos[0] - self.player.pos[0] + (1 - step[0]) / 2)\
                        / ray_angle[0]
         else:
-            wall_dis = (map_pos[1] - self.player.pos[1] + (1 - step_y) / 2)\
+            wall_dis = (map_pos[1] - self.player.pos[1] + (1 - step[1]) / 2)\
                        / ray_angle[1]
         ###TODO: Vectorize code above======
         return wall_dis, side, map_pos, ray_angle
