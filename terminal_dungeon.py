@@ -51,8 +51,10 @@ class Player:
         next_step = (self.pos + forward * self.angle * self.speed @ self.perp)\
                     if strafe else\
                     (self.pos + forward * self.angle * self.speed)
+        #If we can move both coordinates at once, we should
         if not GAME.world_map[tuple(next_step.astype(int))]:
             self.pos = next_step
+        #Allows 'sliding' on walls
         elif not GAME.world_map[int(next_step[0])][int(self.pos[1])]:
             self.pos[0] = next_step[0]
         elif not GAME.world_map[int(self.pos[0])][int(next_step[1])]:
