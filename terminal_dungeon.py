@@ -22,10 +22,10 @@ import pygame
 
 class Map:
     __map = 0
-    def __init__(self, file_name="map1"):
-        self.load_map(file_name)
+    def __init__(self, file_name):
+        self.load(file_name)
 
-    def load_map(self, map_name):
+    def load(self, map_name):
         with open(map_name + ".txt", 'r') as a_map:
             world_map = [[int(char) for char in row]\
                           for row in a_map.read().splitlines()]
@@ -99,8 +99,8 @@ class Renderer:
         self.height, self.width = screen.getmaxyx()
         self.player = player
         self.buffer = np.full((self.height, self.width), " ", dtype=str)
-        #It's safe to modify this ascii_map, but if the length changes, one
-        #will have to fiddle with shading and texturing constants.
+        #It's safe to modify ascii_map, but if the length changes, one will
+        #have to fiddle with shading and texturing constants.
         #==============================================================
         self.ascii_map = dict(enumerate(list(' .,:;<+*LtCa4U80dQM@')))
         #==============================================================
@@ -242,6 +242,7 @@ class Controller():
             self.player.move(-1, True)
         if self.keys[pygame.K_SPACE]:
             self.player.jump()
+            self.keys[pygame.K_SPACE] = False
 
     def update(self):
         self.renderer.update()
@@ -254,7 +255,7 @@ class Controller():
 def main(screen):
     init_curses(screen)
     init_pygame()
-    game_map = Map()
+    game_map = Map("map1")
     player = Player(game_map)
     renderer = Renderer(screen, player, "texture1", "texture2")
     controller = Controller(player, renderer)
