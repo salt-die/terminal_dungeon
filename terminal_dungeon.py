@@ -174,7 +174,6 @@ def load_map(map_name):
     with open(map_name+".txt", 'r') as a_map:
         world_map = [[int(char) for char in row]\
                       for row in a_map.read().splitlines()]
-
     return np.array(world_map).T
 
 def load_textures(*texture_names):
@@ -224,7 +223,7 @@ def main(screen):
         renderer.render()
         user_input()
         move(player)
-    clock.tick(40)
+        clock.tick(40)
     pygame.display.quit()
     pygame.quit()
 
