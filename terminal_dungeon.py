@@ -16,16 +16,29 @@ unicode characters.
 Values stored in textures should range from 0-9.  Values below 6 are
 subtractive and above 6 are additive.
 """
-import types
 import curses
 import numpy as np
 import pygame
 
-GAME = types.SimpleNamespace(running=True, keys=[False]*324, textures_on=True)
+class Map:
+    __map = 0
+    def __init__(self, file_name="map1"):
+        self.load_map(file_name)
+
+    def load_map(self, map_name):
+        with open(map_name + ".txt", 'r') as a_map:
+            world_map = [[int(char) for char in row]\
+                          for row in a_map.read().splitlines()]
+        self.__map = np.array(world_map).T
+
+    def __getitem__(self, key):
+        return self.__map[key]
+
 
 class Player:
-    def __init__(self, pos=np.array([5., 5.]), angle=np.array([1., 0.]),\
-                 plane=np.array([0., 1.])):
+    def __init__(self, game_map, pos=np.array([5., 5.]),\
+                 angle=np.array([1., 0.]), plane=np.array([0., 1.])):
+        self.game_map = game_map
         self.pos = pos
         self.angle = angle
         self.field_of_view = .3 #Somewhere between 0 and 1 is reasonable
@@ -71,13 +84,14 @@ class Player:
                     if strafe else\
                     (self.pos + forward * self.angle * self.speed)
         #If we can move both coordinates at once, we should
-        if not GAME.world_map[tuple(next_step.astype(int))]:
+        if not self.game_map[tuple(next_step.astype(int))]:
             self.pos = next_step
         #Allows 'sliding' on walls
-        elif not GAME.world_map[int(next_step[0])][int(self.pos[1])]:
+        elif not self.game_map[int(next_step[0])][int(self.pos[1])]:
             self.pos[0] = next_step[0]
-        elif not GAME.world_map[int(self.pos[0])][int(next_step[1])]:
+        elif not self.game_map[int(self.pos[0])][int(next_step[1])]:
             self.pos[1] = next_step[1]
+
 
 class Renderer:
     def __init__(self, screen, player, *textures):
@@ -87,7 +101,9 @@ class Renderer:
         self.buffer = np.full((self.height, self.width), " ", dtype=str)
         #It's safe to modify this ascii_map, but if the length changes, one
         #will have to fiddle with shading and texturing constants.
+        #==============================================================
         self.ascii_map = dict(enumerate(list(' .,:;<+*LtCa4U80dQM@')))
+        #==============================================================
         self.shades = len(self.ascii_map)
         self.max_hops = 60 #Controls how far rays are cast.
         self.wall_height = 1.1
@@ -119,10 +135,10 @@ class Renderer:
             side = 0 if side_dis[0] < side_dis[1] else 1
             side_dis[side] += delta[side]
             map_pos[side] += step[side]
-            if GAME.world_map[tuple(map_pos)]:
+            if self.player.game_map[tuple(map_pos)]:
                 break
             if hops == self.max_hops - 1: #No walls in range
-                return
+                return float("inf"), side, map_pos, ray_angle
         #Avoiding euclidean distance, to avoid fish-eye effect.
         wall_dis = (map_pos[side] - self.player.pos[side] +\
                     (1 - step[side]) / 2) / ray_angle[side]
@@ -135,11 +151,11 @@ class Renderer:
             line_height = int(self.height / wall_dis)
         if line_height == 0:
             return 0, 0, [] #Draw nothing
-        line_start = int((-line_height * self.wall_height + self.height) / 2\
-                         + self.wall_y + self.player.z * line_height / 20)
+        line_start, line_end = [int((i * line_height * self.wall_height +\
+                                     self.height) / 2 + self.wall_y +\
+                                     self.player.z * line_height / 20)\
+                                for i in [-1, 1]]
         line_start = 0 if line_start < 0 else line_start
-        line_end = int((line_height * self.wall_height + self.height) / 2\
-                       + self.wall_y + self.player.z * line_height / 20)
         line_end = self.height if line_end > self.height else line_end
         line_height = line_end - line_start #Correct off-by-one errors
         #Shading
@@ -150,7 +166,7 @@ class Renderer:
 
         #Texturing
         if self.textures_on:
-            tex_num = GAME.world_map[map_pos[0]][map_pos[1]] - 1
+            tex_num = self.player.game_map[map_pos[0]][map_pos[1]] - 1
             texture_width, texture_height = self.textures[tex_num].shape
             wall_x = (self.player.pos[-side + 1] +\
                       wall_dis * ray_angle[-side + 1]) % 1
@@ -166,7 +182,7 @@ class Renderer:
                 if new_shade_val < 1:
                     shade_buffer[i] = 1
                 elif 0 <= new_shade_val <= self.shades - 1:
-                    shade_buffer[i] =  new_shade_val
+                    shade_buffer[i] = new_shade_val
                 else:
                     shade_buffer[i] = self.shades - 1
 
@@ -182,10 +198,8 @@ class Renderer:
         self.buffer[self.floor_y:, :] = self.ascii_map[1]
         #Draw Columns
         for column in range(self.width-1):
-            ray = self.cast_ray(column)
-            if ray:
-                start, end, col_buffer = self.draw_column(*ray)
-                self.buffer[start:end, column] = col_buffer
+            start, end, col_buffer = self.draw_column(*self.cast_ray(column))
+            self.buffer[start:end, column] = col_buffer
         self.render()
 
     def render(self):
@@ -193,43 +207,40 @@ class Renderer:
             self.screen.addstr(row_num, 0, ''.join(row[:-1]))
         self.screen.refresh()
 
+
 class Controller():
     def __init__(self, player, renderer):
+        self.running = True
         self.player = player
         self.renderer = renderer
         self.clock = pygame.time.Clock()
-
-    def load_map(self, map_name):
-        with open(map_name+".txt", 'r') as a_map:
-            world_map = [[int(char) for char in row]\
-                          for row in a_map.read().splitlines()]
-        return np.array(world_map).T
+        self.keys = [False]*324
 
     def user_input(self):
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    GAME.running = False
+                    self.running = False
                 elif event.key == pygame.K_t:
-                    GAME.textures_on = not GAME.textures_on
-                GAME.keys[event.key] = True
+                    self.renderer.textures_on = not self.renderer.textures_on
+                self.keys[event.key] = True
             elif event.type == pygame.KEYUP:
-                GAME.keys[event.key] = False
+                self.keys[event.key] = False
 
     def move(self):
-        if GAME.keys[pygame.K_LEFT] or GAME.keys[pygame.K_a]:
+        if self.keys[pygame.K_LEFT] or self.keys[pygame.K_a]:
             self.player.turn()
-        if GAME.keys[pygame.K_RIGHT] or GAME.keys[pygame.K_d]:
+        if self.keys[pygame.K_RIGHT] or self.keys[pygame.K_d]:
             self.player.turn(False)
-        if GAME.keys[pygame.K_UP] or GAME.keys[pygame.K_w]:
+        if self.keys[pygame.K_UP] or self.keys[pygame.K_w]:
             self.player.move()
-        if GAME.keys[pygame.K_DOWN] or GAME.keys[pygame.K_s]:
+        if self.keys[pygame.K_DOWN] or self.keys[pygame.K_s]:
             self.player.move(-1)
-        if GAME.keys[pygame.K_q]:
+        if self.keys[pygame.K_q]:
             self.player.move(strafe=True)
-        if GAME.keys[pygame.K_e]:
+        if self.keys[pygame.K_e]:
             self.player.move(-1, True)
-        if GAME.keys[pygame.K_SPACE]:
+        if self.keys[pygame.K_SPACE]:
             self.player.jump()
 
     def update(self):
@@ -239,14 +250,15 @@ class Controller():
         self.player.fall()
         self.clock.tick(40)
 
+
 def main(screen):
     init_curses(screen)
     init_pygame()
-    player = Player()
+    game_map = Map()
+    player = Player(game_map)
     renderer = Renderer(screen, player, "texture1", "texture2")
     controller = Controller(player, renderer)
-    GAME.world_map = controller.load_map("map1")
-    while GAME.running:
+    while controller.running:
         controller.update()
     pygame.display.quit()
     pygame.quit()
