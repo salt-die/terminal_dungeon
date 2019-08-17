@@ -1,8 +1,12 @@
-![Crawler preview](preview.gif)
+![Terminal Dungeon Preview 1](preview.gif)
 
-Now with better textures:
+With better textures:
 
-![Crawler preview 2](preview2.gif)
+![Terminal Dungeon Preview 2](preview2.gif)
+
+Now with better optimization and jumping!:
+
+![Terminal Dungeon Preview 3](preview3.gif)
 
 
 Terminal Dungeon
