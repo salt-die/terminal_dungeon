@@ -30,8 +30,8 @@ class Player:
         self.angle = angle
         self.field_of_view = .3 #Somewhere between 0 and 1 is reasonable
         self.plane = self.field_of_view * plane
-        self.speed = .05
-        self.rotate_speed = .03
+        self.speed = .1
+        self.rotate_speed = .05
         self.left = np.array([[np.cos(-self.rotate_speed),\
                                np.sin(-self.rotate_speed)],\
                               [-np.sin(-self.rotate_speed),\
@@ -42,6 +42,25 @@ class Player:
                                 np.cos(self.rotate_speed)]])
         self.perp = np.array([[0., -1.],\
                               [1., 0.]])
+        self.jump_time = 18
+        self.time_in_jump = 0
+        self.z = 0
+        self.is_falling = False
+
+    def jump(self):
+        if self.is_falling:
+            return
+        self.is_falling = True
+
+    def fall(self):
+        if not self.is_falling:
+            return
+        if self.time_in_jump >= self.jump_time:
+            self.is_falling, self.time_in_jump, self.z = False, 0, 0
+            return
+        scaled_dif = 2 - 4 * self.time_in_jump / self.jump_time
+        self.z += scaled_dif
+        self.time_in_jump += 1
 
     def turn(self, left=True):
         self.angle = self.angle @ (self.left if left else self.right)
@@ -66,12 +85,12 @@ class Renderer:
         self.height, self.width = screen.getmaxyx()
         self.player = player
         self.buffer = np.full((self.height, self.width), " ", dtype=str)
-        self.ascii_map = dict(enumerate(list(' .,:;<+*LtaC4U80dQM@')))
+        self.ascii_map = dict(enumerate(list(' .,:;<+*LtCa4U80dQM@')))
         self.shades = len(self.ascii_map)
         self.max_hops = 60 #Controls how far rays are cast.
         self.wall_height = 1.
-        self.wall_y = 2. #Wall vertical placement
-        self.floor_height = int(self.height / self.wall_y)
+        self.wall_y = 0. #Wall vertical placement
+        self.floor_y = int(self.height / 2  + self.wall_y)
 
     def cast_ray(self, column):
         ray_angle = self.player.angle +\
@@ -102,11 +121,11 @@ class Renderer:
             line_height = int(self.height / wall_dis)
         if line_height == 0:
             return 0, 0, [] #Draw nothing
-        line_start = int((-line_height * self.wall_height + self.height) /\
-                         self.wall_y)
+        line_start = int((-line_height * self.wall_height + self.height) / 2\
+                         + self.wall_y + self.player.z * line_height / 20)
         line_start = 0 if line_start < 0 else line_start
-        line_end = int((line_height * self.wall_height + self.height) /\
-                       self.wall_y)
+        line_end = int((line_height * self.wall_height + self.height) / 2\
+                       + self.wall_y + self.player.z * line_height / 20)
         line_end = self.height if line_end > self.height else line_end
         line_height = line_end - line_start #Correct off-by-one errors
         #Shading
@@ -145,7 +164,7 @@ class Renderer:
         #Clear buffer
         self.buffer = np.full((self.height, self.width), " ", dtype=str)
         #Draw floor
-        self.buffer[self.floor_height:, :] = self.ascii_map[1]
+        self.buffer[self.floor_y:, :] = self.ascii_map[1]
         #Draw Columns
         for column in range(self.width-1):
             ray = self.cast_ray(column)
@@ -198,6 +217,8 @@ def move(player):
         player.move(strafe=True)
     if GAME.keys[pygame.K_e]:
         player.move(-1, True)
+    if GAME.keys[pygame.K_SPACE]:
+        player.jump()
 
 def main(screen):
     init_curses(screen)
@@ -211,6 +232,7 @@ def main(screen):
         renderer.update()
         user_input()
         move(player)
+        player.fall()
         clock.tick(40)
     pygame.display.quit()
     pygame.quit()
