@@ -78,8 +78,6 @@ class Renderer:
             delta = abs(1 / ray_angle)
         step = np.sign(ray_angle)
         side_dis = step * (map_pos + (step + 1) / 2 - self.player.pos) * delta
-
-        ###TODO: Vectorize code below======
         #Distance to wall
         for i in range(self.max_range):
             side = 0 if side_dis[0] < side_dis[1] else 1
@@ -90,13 +88,8 @@ class Renderer:
             if i == self.max_range - 1:
                 return
         #Avoiding euclidean distance, to avoid fish-eye effect.
-        if not side:
-            wall_dis = (map_pos[0] - self.player.pos[0] + (1 - step[0]) / 2)\
-                       / ray_angle[0]
-        else:
-            wall_dis = (map_pos[1] - self.player.pos[1] + (1 - step[1]) / 2)\
-                       / ray_angle[1]
-        ###TODO: Vectorize code above======
+        wall_dis = (map_pos[side] - self.player.pos[side] +\
+                    (1 - step[side]) / 2) / ray_angle[side]
         return wall_dis, side, map_pos, ray_angle
 
     def draw_column(self, wall_dis, side, map_pos, ray_angle):
@@ -121,11 +114,8 @@ class Renderer:
         if GAME.textures_on:
             texture_num = GAME.world_map[map_pos[0]][map_pos[1]] - 1
             texture_width, texture_height = GAME.textures[texture_num].shape
-            if not side:
-                wall_x = self.player.pos[1] + wall_dis * ray_angle[1]
-            else:
-                wall_x = self.player.pos[0] + wall_dis * ray_angle[0]
-            wall_x -= np.floor(wall_x)
+            wall_x = (self.player.pos[-side + 1] +\
+                     wall_dis * ray_angle[-side + 1]) % 1
             tex_x = int(wall_x * texture_width)
             if (not side and ray_angle[0] > 0) or (side and ray_angle[1] < 0):
                 tex_x = texture_width - tex_x - 1
