@@ -16,25 +16,29 @@ unicode characters.
 Values stored in textures should range from 0-9.  Values below 6 are
 subtractive and above 6 are additive.
 """
+import json
 import curses
 import numpy as np
 import pygame
 
 class Map:
     """
-    Intend to change map files from txt into json to store arbitrary values
-    at each location.  Also can simultaneouly load sprite positions.
+    Each sprite is a dict with keys "pos","image","relative" for position,
+    sprite image number, and relative position to player (which will be set
+    after first call to cast_sprites in the renderer).
     """
     __map = 0
     def __init__(self, file_name):
         self.load(file_name)
-        self.sprites = None
+        self.sprites = []
 
-    def load(self, map_name):
-        with open(map_name + ".txt", 'r') as a_map:
-            world_map = [[int(char) for char in row]\
-                          for row in a_map.read().splitlines()]
-        self.__map = np.array(world_map).T
+    def load(self, file_name):
+        with open(file_name + ".json", 'r') as file:
+            map_dict = json.load(file)
+            self.__map = np.array(map_dict["map"]).T
+            self.sprites = map_dict["sprites"]
+        for sprite in self.sprites:
+            sprite["pos"] = np.array(sprite["pos"])
 
     def __getitem__(self, key):
         return self.__map[key]
@@ -130,9 +134,8 @@ class Renderer:
     def load_textures(self, *texture_names):
         textures = []
         for name in texture_names:
-            with open(name+".txt", 'r') as texture:
-                pre_load = [[int(char) for char in row]\
-                            for row in texture.read().splitlines()]
+            with open(name + ".json", 'r') as texture:
+                pre_load = json.load(texture)
                 textures.append(np.array(pre_load).T)
         self.textures = textures
 
@@ -205,7 +208,12 @@ class Renderer:
         return line_start, line_end, column_buffer
 
     def cast_sprite(self):
-        pass
+        sprite_distances = {}
+        for sprite in self.game_map.sprites:
+            sprite["relative"] = self.player.pos - sprite["pos"]
+            sprite_distances[sprite] = sprite.relative @ sprite.relative
+        sorted_sprites = sorted(sprite_distances, key=sprite_distances.get,\
+                                reverse=True)
 
     def update(self):
         #Clear buffer
