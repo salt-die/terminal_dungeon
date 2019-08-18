@@ -80,7 +80,7 @@ class Player:
             self.is_falling, self.time_in_jump, self.z = False, 0, 0.
             return
         self.z +=\
-         2 * (self.jump_time - self.time_in_jump)**2 / self.jump_time**2\
+         (self.jump_time - self.time_in_jump)**2 / (10 * self.jump_time**2)\
           * (1 if self.time_in_jump < self.jump_time else -1)
         self.time_in_jump += 1
 
@@ -163,7 +163,7 @@ class Renderer:
             return 0, 0, [] #Draw nothing
         line_start, line_end =\
          [int((i * line_height * self.wall_height + self.height) / 2 +\
-              self.wall_y + self.player.z * line_height / 20) for i in [-1, 1]]
+              self.wall_y + self.player.z * line_height) for i in [-1, 1]]
         line_start = 0 if line_start < 0 else line_start
         line_end = self.height if line_end > self.height else line_end
         line_height = line_end - line_start #Correct off-by-one errors
