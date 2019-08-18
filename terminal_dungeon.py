@@ -60,6 +60,10 @@ class Player:
         self.z = 0.
         self.is_falling = False
 
+    def update(self):
+        #We'll have more to do here eventually.
+        self.fall()
+
     def jump(self):
         if self.is_falling:
             return
@@ -214,7 +218,7 @@ class Controller():
         self.player = player
         self.renderer = renderer
         self.clock = pygame.time.Clock()
-        self.keys = [False]*324
+        self.keys = [False] * 324
 
     def user_input(self):
         for event in pygame.event.get():
@@ -248,7 +252,7 @@ class Controller():
         self.renderer.update()
         self.user_input()
         self.move_player()
-        self.player.fall()
+        self.player.update()
         self.clock.tick(40)
 
 
