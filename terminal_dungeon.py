@@ -45,9 +45,8 @@ class Player:
                  angle=np.array([1., 0.]), plane=np.array([0., 1.])):
         self.game_map = game_map
         self.pos = pos
-        self.angle = angle
         self.field_of_view = .6 #Somewhere between 0 and 1 is reasonable
-        self.plane = self.field_of_view * plane
+        self.cam = np.array([angle, self.field_of_view * plane])
         self.speed = .1
         self.rotate_speed = .05
         self.left = np.array([[np.cos(-self.rotate_speed),\
@@ -60,7 +59,7 @@ class Player:
                                 np.cos(self.rotate_speed)]])
         self.perp = np.array([[0., -1.],\
                               [1., 0.]])
-        self.jump_time = 18
+        self.jump_time = 9
         self.time_in_jump = 0
         self.z = 0.
         self.is_falling = False
@@ -77,21 +76,21 @@ class Player:
     def fall(self):
         if not self.is_falling:
             return
-        if self.time_in_jump >= self.jump_time:
+        if self.time_in_jump >= 2 * self.jump_time:
             self.is_falling, self.time_in_jump, self.z = False, 0, 0.
             return
-        scaled_dif = 2 - 4 * self.time_in_jump / self.jump_time
-        self.z += scaled_dif
+        self.z +=\
+         2 * (self.jump_time - self.time_in_jump)**2 / self.jump_time**2\
+          * (1 if self.time_in_jump < self.jump_time else -1)
         self.time_in_jump += 1
 
     def turn(self, left=True):
-        self.angle = self.angle @ (self.left if left else self.right)
-        self.plane = self.plane @ (self.left if left else self.right)
+        self.cam = self.cam @ (self.left if left else self.right)
 
     def move(self, forward=1, strafe=False):
-        next_step = (self.pos + forward * self.angle * self.speed @ self.perp)\
+        next_step = (self.pos + forward * self.cam[0] * self.speed @ self.perp)\
                     if strafe else\
-                    (self.pos + forward * self.angle * self.speed)
+                    (self.pos + forward * self.cam[0] * self.speed)
         #If we can move both coordinates at once, we should
         if not self.game_map[tuple(next_step.astype(int))]:
             self.pos = next_step
@@ -106,6 +105,8 @@ class Renderer:
     def __init__(self, screen, player, *textures):
         self.screen = screen
         self.height, self.width = screen.getmaxyx()
+        self.hght_inv = np.array([0, 1 / self.height]) #Save us time casting
+        self.const = np.array([1, -1])                 #Another time saver
         self.player = player
         self.buffer = np.full((self.height, self.width), " ", dtype=str)
         #It's safe to modify ascii_map, but if the length changes, one will
@@ -132,8 +133,7 @@ class Renderer:
         self.textures = textures
 
     def cast_ray(self, column):
-        ray_angle =\
-         self.player.angle + self.player.plane * (column / self.height - 1)
+        ray_angle = self.player.cam.T @ (column * self.hght_inv + self.const)
         map_pos = self.player.pos.astype(int)
         with np.errstate(divide="ignore"):
             delta = abs(1 / ray_angle)
@@ -199,7 +199,7 @@ class Renderer:
         column_buffer = [self.ascii_map[val] for val in shade_buffer]
         column_buffer = np.array(column_buffer, dtype=str)
         return line_start, line_end, column_buffer
-    
+
     def cast_sprite(self):
         pass
 
