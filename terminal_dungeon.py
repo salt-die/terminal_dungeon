@@ -47,7 +47,7 @@ class Player:
         self.speed = .1
         self.rotate_speed = .05
         self.jump_time = 9
-        #==============================================================
+
         self.game_map = game_map
         self.pos = pos
         self.field_of_view = .6 #Somewhere between 0 and 1 is reasonable
@@ -106,31 +106,32 @@ class Player:
 
 
 class Renderer:
-    def __init__(self, screen, player, *textures):
+    def __init__(self, screen, player, game_map, *textures):
         #Settings======================================================
         self.max_hops = 60 #How far rays are cast.
         self.wall_height = 1.1
         self.wall_y = 0. #Wall vertical placement
-        #==============================================================
+
         self.screen = screen
         self.height, self.width = screen.getmaxyx()
         self.floor_y = int(self.height / 2  + self.wall_y)
+        self.distances = [0] * self.width
         self.player = player
+        self.game_map = game_map
         self.buffer = np.full((self.height, self.width), " ", dtype=str)
         self.textures = []
         self.load_textures(*textures)
         self.textures_on = True
+
         #So we have fewer arrays to initialize inside loops============
         self.hght_inv = np.array([0, 1 / self.height])
         self.const = np.array([1, -1])
-        #==============================================================
-        #It's safe to modify ascii_map, but if the length changes, one will
-        #have to fiddle with shading and texturing constants.
-        #==============================================================
-        self.ascii_map = dict(enumerate(list(' .,:;<+*LtCa4U80dQM@')))
-        #==============================================================
-        self.shades = len(self.ascii_map)
 
+        #Shading Constants--It's safe to modify ascii_map==============
+        self.ascii_map = dict(enumerate(list(' .,:;<+*LtCa4U80dQM@')))
+        self.shades = len(self.ascii_map) - 1
+        self.side_shade = (self.shades + 1) // 5
+        self.shade_dif = self.shades - self.side_shade
 
     def load_textures(self, *texture_names):
         textures = []
@@ -153,7 +154,7 @@ class Renderer:
             side = 0 if side_dis[0] < side_dis[1] else 1
             side_dis[side] += delta[side]
             map_pos[side] += step[side]
-            if self.player.game_map[tuple(map_pos)]:
+            if self.game_map[tuple(map_pos)]:
                 break
             if hops == self.max_hops - 1: #No walls in range
                 return float("inf"), side, map_pos, ray_angle
@@ -161,6 +162,7 @@ class Renderer:
         wall_dis =\
          (map_pos[side] - self.player.pos[side] + (1 - step[side]) / 2)\
          / ray_angle[side]
+        self.distances[column] = wall_dis #Distances saved for sprite drawing
         return wall_dis, side, map_pos, ray_angle
 
     def draw_column(self, wall_dis, side, map_pos, ray_angle):
@@ -177,14 +179,14 @@ class Renderer:
         line_end = self.height if line_end > self.height else line_end
         line_height = line_end - line_start #Correct off-by-one errors
         #Shading
-        shade = line_height if line_height < 15 else 15
-        shade += 0 if side else 4 #One side is brighter
+        shade = line_height if line_height < self.shade_dif else self.shade_dif
+        shade += 0 if side else self.side_shade #One side is brighter
         #Write column to a temporary buffer
         shade_buffer = [shade] * line_height
 
         #Texturing
         if self.textures_on:
-            tex_num = self.player.game_map[map_pos[0]][map_pos[1]] - 1
+            tex_num = self.game_map[map_pos[0]][map_pos[1]] - 1
             texture_width, texture_height = self.textures[tex_num].shape
             wall_x =\
              (self.player.pos[-side + 1] + wall_dis * ray_angle[-side + 1]) % 1
@@ -199,10 +201,10 @@ class Renderer:
                  2 * self.textures[tex_num][tex_x][tex_y] - 12 + val
                 if new_shade_val < 1:
                     shade_buffer[i] = 1
-                elif 0 <= new_shade_val <= self.shades - 1:
+                elif 0 <= new_shade_val <= self.shades:
                     shade_buffer[i] = new_shade_val
                 else:
-                    shade_buffer[i] = self.shades - 1
+                    shade_buffer[i] = self.shades
 
         #Convert shade values to ascii
         column_buffer = [self.ascii_map[val] for val in shade_buffer]
@@ -278,7 +280,7 @@ def main(screen):
     init_pygame()
     game_map = Map("map1")
     player = Player(game_map)
-    renderer = Renderer(screen, player, "texture1", "texture2")
+    renderer = Renderer(screen, player, game_map, "texture1", "texture2")
     controller = Controller(player, renderer)
     while controller.running:
         controller.update()
