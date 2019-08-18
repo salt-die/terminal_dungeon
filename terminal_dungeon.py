@@ -105,23 +105,31 @@ class Renderer:
     def __init__(self, screen, player, *textures):
         self.screen = screen
         self.height, self.width = screen.getmaxyx()
-        self.hght_inv = np.array([0, 1 / self.height]) #Save us time casting
-        self.const = np.array([1, -1])                 #Another time saver
         self.player = player
         self.buffer = np.full((self.height, self.width), " ", dtype=str)
+        self.textures = []
+        self.load_textures(*textures)
+        self.textures_on = True
+
+        #So we have fewer arrays to initialize inside loops============
+        self.hght_inv = np.array([0, 1 / self.height])
+        self.const = np.array([1, -1])
+        #==============================================================
+
         #It's safe to modify ascii_map, but if the length changes, one will
         #have to fiddle with shading and texturing constants.
         #==============================================================
         self.ascii_map = dict(enumerate(list(' .,:;<+*LtCa4U80dQM@')))
         #==============================================================
         self.shades = len(self.ascii_map)
+
+        #Settings======================================================
         self.max_hops = 60 #Controls how far rays are cast.
         self.wall_height = 1.1
         self.wall_y = 0. #Wall vertical placement
+        #==============================================================
         self.floor_y = int(self.height / 2  + self.wall_y)
-        self.textures = []
-        self.load_textures(*textures)
-        self.textures_on = True
+
 
     def load_textures(self, *texture_names):
         textures = []
