@@ -186,7 +186,7 @@ class Renderer:
 
         #Texturing
         if self.textures_on:
-            tex_num = self.game_map[map_pos[0]][map_pos[1]] - 1
+            tex_num = self.game_map[tuple(map_pos)] - 1
             texture_width, texture_height = self.textures[tex_num].shape
             wall_x =\
              (self.player.pos[-side + 1] + wall_dis * ray_angle[-side + 1]) % 1
@@ -197,12 +197,11 @@ class Renderer:
             tex_to_wall_ratio = 1 / line_height * texture_height
             for i, val in enumerate(shade_buffer):
                 tex_y = int(i * tex_to_wall_ratio)
-                new_shade_val =\
-                 2 * self.textures[tex_num][tex_x][tex_y] - 12 + val
-                if new_shade_val < 1:
+                val += 2 * self.textures[tex_num][tex_x, tex_y] - 12
+                if val <= 1:
                     shade_buffer[i] = 1
-                elif 0 <= new_shade_val <= self.shades:
-                    shade_buffer[i] = new_shade_val
+                elif 1 < val <= self.shades:
+                    shade_buffer[i] = val
                 else:
                     shade_buffer[i] = self.shades
 
