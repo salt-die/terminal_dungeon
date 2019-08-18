@@ -46,7 +46,7 @@ class Player:
         #Settings======================================================
         self.speed = .1
         self.rotate_speed = .05
-        self.jump_time = 9
+        self.jump_time = 8
 
         self.game_map = game_map
         self.pos = pos
@@ -66,22 +66,17 @@ class Player:
                               [1., 0.]])
         self.time_in_jump = 0
         self.z = 0.
-        self.is_falling = False
+        self.is_jumping = False
 
     def update(self):
         #We'll have more to do here eventually.
         self.fall()
 
-    def jump(self):
-        if self.is_falling:
-            return
-        self.is_falling = True
-
     def fall(self):
-        if not self.is_falling:
+        if not self.is_jumping:
             return
         if self.time_in_jump >= 2 * self.jump_time:
-            self.is_falling, self.time_in_jump, self.z = False, 0, 0.
+            self.is_jumping, self.time_in_jump, self.z = False, 0, 0.
             return
         self.z +=\
          (self.jump_time - self.time_in_jump)**2 / (10 * self.jump_time**2)\
@@ -91,10 +86,9 @@ class Player:
     def turn(self, left=True):
         self.cam = self.cam @ (self.left if left else self.right)
 
-    def move(self, forward=1, strafe=False):
-        next_step = (self.pos + forward * self.cam[0] * self.speed @ self.perp)\
-                    if strafe else\
-                    (self.pos + forward * self.cam[0] * self.speed)
+    def move(self, speed, strafe=False):
+        next_step = self.pos + speed * \
+                    (self.cam[0] @ self.perp if strafe else self.cam[0])
         #If we can move both coordinates at once, we should
         if not self.game_map[tuple(next_step.astype(int))]:
             self.pos = next_step
@@ -189,9 +183,9 @@ class Renderer:
             tex_num = self.game_map[tuple(map_pos)] - 1
             texture_width, texture_height = self.textures[tex_num].shape
             wall_x =\
-             (self.player.pos[-side + 1] + wall_dis * ray_angle[-side + 1]) % 1
+             (self.player.pos[1 - side] + wall_dis * ray_angle[1 - side]) % 1
             tex_x = int(wall_x * texture_width)
-            if (side * 2 - 1) * ray_angle[side] < 0:
+            if -1**side * ray_angle[side] < 0:
                 tex_x = texture_width - tex_x - 1
             #Add or subtract texture values to shade values
             tex_to_wall_ratio = texture_height / line_height
@@ -237,6 +231,7 @@ class Controller():
         self.renderer = renderer
         self.clock = pygame.time.Clock()
         self.keys = [False] * 324
+        self.jumping_keys = [False] * 324
 
     def user_input(self):
         for event in pygame.event.get():
@@ -246,29 +241,37 @@ class Controller():
                 elif event.key == pygame.K_t:
                     self.renderer.textures_on = not self.renderer.textures_on
                 self.keys[event.key] = True
+                if not self.player.is_jumping:
+                    self.jumping_keys[event.key] = True
             elif event.type == pygame.KEYUP:
                 self.keys[event.key] = False
+                if not self.player.is_jumping:
+                    self.jumping_keys[event.key] = False
 
     def move_player(self):
-        if self.keys[pygame.K_LEFT] or self.keys[pygame.K_a]:
-            self.player.turn()
-        if self.keys[pygame.K_RIGHT] or self.keys[pygame.K_d]:
-            self.player.turn(False)
-        if self.keys[pygame.K_UP] or self.keys[pygame.K_w]:
-            self.player.move()
-        if self.keys[pygame.K_DOWN] or self.keys[pygame.K_s]:
-            self.player.move(-1)
-        if self.keys[pygame.K_q]:
-            self.player.move(strafe=True)
-        if self.keys[pygame.K_e]:
-            self.player.move(-1, True)
+        left = self.keys[pygame.K_LEFT] or self.keys[pygame.K_a]
+        right = self.keys[pygame.K_RIGHT] or self.keys[pygame.K_d]
+        keys = self.jumping_keys if self.player.is_jumping else self.keys
+        up = keys[pygame.K_UP] or keys[pygame.K_w]
+        down = keys[pygame.K_DOWN] or keys[pygame.K_s]
+        strafe_l = keys[pygame.K_q]
+        strafe_r = keys[pygame.K_e]
+        if left ^ right:
+            self.player.turn(left or not right)
+        if up ^ down:
+            self.player.move((up - down) * self.player.speed)
+        if strafe_l ^ strafe_r:
+            self.player.move((strafe_l - strafe_r) * self.player.speed,\
+                             True)
         if self.keys[pygame.K_SPACE]:
-            self.player.jump()
+            self.player.is_jumping = True
             self.keys[pygame.K_SPACE] = False
 
     def update(self):
         self.renderer.update()
         self.user_input()
+        if not self.player.is_jumping:
+            self.jumping_keys = self.keys.copy()
         self.move_player()
         self.player.update()
         self.clock.tick(40)
