@@ -1,11 +1,3 @@
-![Terminal Dungeon Preview 1](preview.gif)
-
-With better textures:
-
-![Terminal Dungeon Preview 2](preview2.gif)
-
-Now with better optimization and jumping!:
-
 ![Terminal Dungeon Preview 3](preview3.gif)
 
 
