@@ -232,6 +232,7 @@ class Controller():
         self.clock = pygame.time.Clock()
         self.keys = [False] * 324
         self.jumping_keys = [False] * 324
+        self.player_has_jumped = False
 
     def user_input(self):
         for event in pygame.event.get():
@@ -241,12 +242,8 @@ class Controller():
                 elif event.key == pygame.K_t:
                     self.renderer.textures_on = not self.renderer.textures_on
                 self.keys[event.key] = True
-                if not self.player.is_jumping:
-                    self.jumping_keys[event.key] = True
             elif event.type == pygame.KEYUP:
                 self.keys[event.key] = False
-                if not self.player.is_jumping:
-                    self.jumping_keys[event.key] = False
 
     def move_player(self):
         left = self.keys[pygame.K_LEFT] or self.keys[pygame.K_a]
@@ -263,14 +260,16 @@ class Controller():
         if strafe_l ^ strafe_r:
             self.player.move((strafe_l - strafe_r) * self.player.speed, True)
         if self.keys[pygame.K_SPACE]:
+            self.player_has_jumped = True
             self.player.is_jumping = True
             self.keys[pygame.K_SPACE] = False
 
     def update(self):
         self.renderer.update()
         self.user_input()
-        if not self.player.is_jumping:
-            self.jumping_keys = self.keys.copy()
+        if self.player_has_jumped:
+           self.jumping_keys = self.keys.copy()
+           self.player_has_jumped = False
         self.move_player()
         self.player.update()
         self.clock.tick(40)
