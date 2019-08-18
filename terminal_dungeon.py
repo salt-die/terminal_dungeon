@@ -261,8 +261,7 @@ class Controller():
         if up ^ down:
             self.player.move((up - down) * self.player.speed)
         if strafe_l ^ strafe_r:
-            self.player.move((strafe_l - strafe_r) * self.player.speed,\
-                             True)
+            self.player.move((strafe_l - strafe_r) * self.player.speed, True)
         if self.keys[pygame.K_SPACE]:
             self.player.is_jumping = True
             self.keys[pygame.K_SPACE] = False
