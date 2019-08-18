@@ -21,9 +21,14 @@ import numpy as np
 import pygame
 
 class Map:
+    """
+    Intend to change map files from txt into json to store arbitrary values
+    at each location.  Also can simultaneouly load sprite positions.
+    """
     __map = 0
     def __init__(self, file_name):
         self.load(file_name)
+        self.sprites = None
 
     def load(self, map_name):
         with open(map_name + ".txt", 'r') as a_map:
@@ -41,7 +46,7 @@ class Player:
         self.game_map = game_map
         self.pos = pos
         self.angle = angle
-        self.field_of_view = .3 #Somewhere between 0 and 1 is reasonable
+        self.field_of_view = .6 #Somewhere between 0 and 1 is reasonable
         self.plane = self.field_of_view * plane
         self.speed = .1
         self.rotate_speed = .05
@@ -127,8 +132,8 @@ class Renderer:
         self.textures = textures
 
     def cast_ray(self, column):
-        ray_angle = self.player.angle +\
-                    self.player.plane * (column / self.height - 1)
+        ray_angle =\
+         self.player.angle + self.player.plane * (column / self.height - 1)
         map_pos = self.player.pos.astype(int)
         with np.errstate(divide="ignore"):
             delta = abs(1 / ray_angle)
@@ -144,8 +149,9 @@ class Renderer:
             if hops == self.max_hops - 1: #No walls in range
                 return float("inf"), side, map_pos, ray_angle
         #Avoiding euclidean distance, to avoid fish-eye effect.
-        wall_dis = (map_pos[side] - self.player.pos[side] +\
-                    (1 - step[side]) / 2) / ray_angle[side]
+        wall_dis =\
+         (map_pos[side] - self.player.pos[side] + (1 - step[side]) / 2)\
+         / ray_angle[side]
         return wall_dis, side, map_pos, ray_angle
 
     def draw_column(self, wall_dis, side, map_pos, ray_angle):
@@ -155,10 +161,9 @@ class Renderer:
             line_height = int(self.height / wall_dis)
         if line_height == 0:
             return 0, 0, [] #Draw nothing
-        line_start, line_end = [int((i * line_height * self.wall_height +\
-                                     self.height) / 2 + self.wall_y +\
-                                     self.player.z * line_height / 20)\
-                                for i in [-1, 1]]
+        line_start, line_end =\
+         [int((i * line_height * self.wall_height + self.height) / 2 +\
+              self.wall_y + self.player.z * line_height / 20) for i in [-1, 1]]
         line_start = 0 if line_start < 0 else line_start
         line_end = self.height if line_end > self.height else line_end
         line_height = line_end - line_start #Correct off-by-one errors
@@ -172,8 +177,8 @@ class Renderer:
         if self.textures_on:
             tex_num = self.player.game_map[map_pos[0]][map_pos[1]] - 1
             texture_width, texture_height = self.textures[tex_num].shape
-            wall_x = (self.player.pos[-side + 1] +\
-                      wall_dis * ray_angle[-side + 1]) % 1
+            wall_x =\
+             (self.player.pos[-side + 1] + wall_dis * ray_angle[-side + 1]) % 1
             tex_x = int(wall_x * texture_width)
             if (side * 2 - 1) * ray_angle[side] < 0:
                 tex_x = texture_width - tex_x - 1
@@ -181,8 +186,8 @@ class Renderer:
             tex_to_wall_ratio = 1 / line_height * texture_height
             for i, val in enumerate(shade_buffer):
                 tex_y = int(i * tex_to_wall_ratio)
-                new_shade_val = 2 * self.textures[tex_num][tex_x][tex_y] -\
-                                12 + val
+                new_shade_val =\
+                 2 * self.textures[tex_num][tex_x][tex_y] - 12 + val
                 if new_shade_val < 1:
                     shade_buffer[i] = 1
                 elif 0 <= new_shade_val <= self.shades - 1:
@@ -194,6 +199,9 @@ class Renderer:
         column_buffer = [self.ascii_map[val] for val in shade_buffer]
         column_buffer = np.array(column_buffer, dtype=str)
         return line_start, line_end, column_buffer
+    
+    def cast_sprite(self):
+        pass
 
     def update(self):
         #Clear buffer
