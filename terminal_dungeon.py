@@ -42,13 +42,18 @@ class Map:
 
 class Player:
     def __init__(self, game_map, pos=np.array([5., 5.]),\
-                 angle=np.array([1., 0.]), plane=np.array([0., 1.])):
+                 initial_angle=0):
+        #Settings======================================================
+        self.speed = .1
+        self.rotate_speed = .05
+        self.jump_time = 9
+        #==============================================================
         self.game_map = game_map
         self.pos = pos
         self.field_of_view = .6 #Somewhere between 0 and 1 is reasonable
-        self.cam = np.array([angle, self.field_of_view * plane])
-        self.speed = .1
-        self.rotate_speed = .05
+        self.cam = np.array([[1, 0], [0, self.field_of_view]]) @\
+                   np.array([[np.cos(initial_angle), np.sin(initial_angle)],\
+                             [-np.sin(initial_angle), np.cos(initial_angle)]])
         self.left = np.array([[np.cos(-self.rotate_speed),\
                                np.sin(-self.rotate_speed)],\
                               [-np.sin(-self.rotate_speed),\
@@ -59,7 +64,6 @@ class Player:
                                 np.cos(self.rotate_speed)]])
         self.perp = np.array([[0., -1.],\
                               [1., 0.]])
-        self.jump_time = 9
         self.time_in_jump = 0
         self.z = 0.
         self.is_falling = False
@@ -103,32 +107,29 @@ class Player:
 
 class Renderer:
     def __init__(self, screen, player, *textures):
+        #Settings======================================================
+        self.max_hops = 60 #How far rays are cast.
+        self.wall_height = 1.1
+        self.wall_y = 0. #Wall vertical placement
+        #==============================================================
         self.screen = screen
         self.height, self.width = screen.getmaxyx()
+        self.floor_y = int(self.height / 2  + self.wall_y)
         self.player = player
         self.buffer = np.full((self.height, self.width), " ", dtype=str)
         self.textures = []
         self.load_textures(*textures)
         self.textures_on = True
-
         #So we have fewer arrays to initialize inside loops============
         self.hght_inv = np.array([0, 1 / self.height])
         self.const = np.array([1, -1])
         #==============================================================
-
         #It's safe to modify ascii_map, but if the length changes, one will
         #have to fiddle with shading and texturing constants.
         #==============================================================
         self.ascii_map = dict(enumerate(list(' .,:;<+*LtCa4U80dQM@')))
         #==============================================================
         self.shades = len(self.ascii_map)
-
-        #Settings======================================================
-        self.max_hops = 60 #Controls how far rays are cast.
-        self.wall_height = 1.1
-        self.wall_y = 0. #Wall vertical placement
-        #==============================================================
-        self.floor_y = int(self.height / 2  + self.wall_y)
 
 
     def load_textures(self, *texture_names):
@@ -176,8 +177,8 @@ class Renderer:
         line_end = self.height if line_end > self.height else line_end
         line_height = line_end - line_start #Correct off-by-one errors
         #Shading
-        shade = int(15 if wall_dis > 15 else wall_dis)
-        shade = 15 - shade + (0 if side else 4) #One side is brighter
+        shade = line_height if line_height < 15 else 15
+        shade += 0 if side else 4 #One side is brighter
         #Write column to a temporary buffer
         shade_buffer = [shade] * line_height
 
