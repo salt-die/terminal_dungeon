@@ -194,7 +194,7 @@ class Renderer:
             if (side * 2 - 1) * ray_angle[side] < 0:
                 tex_x = texture_width - tex_x - 1
             #Add or subtract texture values to shade values
-            tex_to_wall_ratio = 1 / line_height * texture_height
+            tex_to_wall_ratio = texture_height / line_height
             for i, val in enumerate(shade_buffer):
                 tex_y = int(i * tex_to_wall_ratio)
                 val += 2 * self.textures[tex_num][tex_x, tex_y] - 12
