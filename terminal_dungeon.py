@@ -107,12 +107,10 @@ class Renderer:
     def __init__(self, screen, player, game_map, *textures):
         #Settings======================================================
         self.max_hops = 60 #How far rays are cast.
-        self.wall_height = 1.1
-        self.wall_y = 0. #Wall vertical placement
 
         self.screen = screen
         self.height, self.width = screen.getmaxyx()
-        self.floor_y = int(self.height / 2  + self.wall_y)
+        self.floor_y = self.height // 2
         self.distances = [0] * self.width
         self.player = player
         self.game_map = game_map
@@ -170,8 +168,8 @@ class Renderer:
         if line_height == 0:
             return 0, 0, [] #Draw nothing
         line_start, line_end =\
-         [int((i * line_height * self.wall_height + self.height) / 2 +\
-              self.wall_y + self.player.z * line_height) for i in [-1, 1]]
+         [int((i * line_height + self.height) / 2 +\
+              self.player.z * line_height) for i in [-1, 1]]
         line_start = 0 if line_start < 0 else line_start
         line_end = self.height if line_end > self.height else line_end
         line_height = line_end - line_start #Correct off-by-one errors
@@ -207,13 +205,52 @@ class Renderer:
         column_buffer = np.array(column_buffer, dtype=str)
         return line_start, line_end, column_buffer
 
-    def cast_sprite(self):
+    def cast_sprites(self):
         sprite_distances = {}
         for sprite in self.game_map.sprites:
             sprite["relative"] = self.player.pos - sprite["pos"]
             sprite_distances[sprite] = sprite.relative @ sprite.relative
+        #Sprites sorted by distance from player
         sorted_sprites = sorted(sprite_distances, key=sprite_distances.get,\
                                 reverse=True)
+        #Camera Inverse used to calculate transformed position of sprites
+        cam_inv = np.linalg.inv(self.player.cam[::-1])
+        for sprite in sorted_sprites:
+            trans_pos = sprite["relative"] @ cam_inv
+            if trans_pos[1] < 0:
+                continue
+            sprite_screen, sprite_height =\
+                (int((self.width * (1 + trans_pos[0] / trans_pos[1]) / 2)),\
+                abs(int(self.height / trans_pos[1])))\
+                if trans_pos != 0 else (float("inf"), self.height)
+            start_y, end_y = [(i * sprite_height + self.height) // 2\
+                              for i in [-1, 1]]
+            start_y = 0 if start_y < 0 else start_y
+            end_y = self.height if end_y > self.height else end_y
+            sprite_height = end_y - start_y #Correct off-by-one errors
+            start_x, end_x = [(i * sprite_height // 2 + sprite_screen)\
+                              for i in [-1, 1]]
+            start_x = 0 if start_x < 0 else start_x
+            end_x = self.width if end_x > self.width else end_x
+            tex_num = sprite["image"]
+            tex_width, tex_height = self.textures[tex_num].shape
+            loop_constant_1 = sprite_screen - sprite_height / 2
+            loop_constant_2 = tex_width / sprite_height
+            loop_constant_3 = (sprite_height - self.height) // 2
+            loop_constant_4 = tex_height / sprite_height
+            for column in range(start_x, end_x):
+                tex_x = int((column - loop_constant_1) * loop_constant_2)
+                if 0 <= tex_x <= self.width and\
+                   trans_pos[1] < self.distances[column]:
+                       sprite_buffer = [0] * (end_y - start_y)
+                       for i in range(start_y, end_y):
+                           tex_y = (i - loop_constant_3) * loop_constant_4
+                           char = self.textures[tex_num][tex_x, tex_y]
+                           sprite_buffer[i] =  char if char != "0" else\
+                               self.buffer[i, column] #'0's are transparent
+                sprite_buffer = np.array(sprite_buffer, dtype=str)
+                self.buffer[start_y:end_y, column] = sprite_buffer
+
 
     def update(self):
         #Clear buffer
