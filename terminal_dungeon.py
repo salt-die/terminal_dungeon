@@ -152,12 +152,13 @@ class Renderer:
             if self.game_map[tuple(map_pos)]:
                 break
             if hops == self.max_hops - 1: #No walls in range
+                self.distances[column] = float("inf")
                 return float("inf"), side, map_pos, ray_angle
         #Avoiding euclidean distance, to avoid fish-eye effect.
         wall_dis =\
          (map_pos[side] - self.player.pos[side] + (1 - step[side]) / 2)\
          / ray_angle[side]
-        self.distances[column] = wall_dis #Distances saved for sprite drawing
+        self.distances[column] = wall_dis
         return wall_dis, side, map_pos, ray_angle
 
     def draw_column(self, wall_dis, side, map_pos, ray_angle):
