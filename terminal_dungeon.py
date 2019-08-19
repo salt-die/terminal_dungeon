@@ -158,7 +158,8 @@ class Renderer:
         wall_dis =\
          (map_pos[side] - self.player.pos[side] + (1 - step[side]) / 2)\
          / ray_angle[side]
-        self.distances[column] = wall_dis
+        #True distance for sprite calculations
+        self.distances[column] = np.linalg.norm(self.player.pos - map_pos)
         return wall_dis, side, map_pos, ray_angle
 
     def draw_column(self, wall_dis, side, map_pos, ray_angle):
@@ -222,30 +223,29 @@ class Renderer:
             if trans_pos[1] <= 0:
                 continue
             sprite_x = int(self.width * (1 + trans_pos[0] / trans_pos[1]) * .5)
-            sprite_height = int(self.height / trans_pos[1])
-            start_y, end_y = [int((i * sprite_height  + self.height) // 2\
-                              + self.player.z * sprite_height)\
+            sprite_width = sprite_height = int(self.height / trans_pos[1])
+            start_y, end_y = [(i * sprite_height + self.height) // 2\
                               for i in [-1, 1]]
             start_y = 0 if start_y < 0 else start_y
             end_y = self.height if end_y > self.height else end_y
-            start_x, end_x = [(i * sprite_height // 2 + sprite_x)\
+            start_x, end_x = [(i * sprite_width // 2 + sprite_x)\
                               for i in [-1, 1]]
             start_x = 0 if start_x < 0 else start_x
             end_x = self.width if end_x > self.width else end_x
             tex_num = sprite["image"]
             tex_width, tex_height = self.textures[tex_num].shape
             #Calculate some constants outside the next loops:
-            clip_x = sprite_x - sprite_height / 2
+            clip_x = sprite_x - sprite_width / 2
             clip_y = (sprite_height - self.height) / 2
-            width_ratio = tex_width / sprite_height
+            width_ratio = tex_width / sprite_width
             height_ratio = tex_height / sprite_height
             for column in range(start_x, end_x):
                 tex_x = int((column - clip_x) * width_ratio)
                 if 0 <= column <= self.width and\
-                   trans_pos[1] < self.distances[column]:
+                   trans_pos[1] <= self.distances[column]:
                     sprite_buffer = [0] * (end_y - start_y)
                     for i in range(start_y, end_y):
-                        tex_y = np.clip(int((i + clip_y) * height_ratio), 0 ,17)
+                        tex_y = int((i + clip_y) * height_ratio)
                         char = self.textures[tex_num][tex_x, tex_y]
                         sprite_buffer[i - start_y] =  char if char != "0" else\
                             self.buffer[i, column] #'0's are transparent
