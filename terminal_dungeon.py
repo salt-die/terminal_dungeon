@@ -29,8 +29,8 @@ class Map:
     """
     __map = 0
     def __init__(self, file_name):
-        self.load(file_name)
         self.sprites = []
+        self.load(file_name)
 
     def load(self, file_name):
         with open(file_name + ".json", 'r') as file:
@@ -38,7 +38,7 @@ class Map:
             self.__map = np.array(map_dict["map"]).T
             self.sprites = map_dict["sprites"]
         for sprite in self.sprites:
-            sprite["pos"] = np.array(sprite["pos"])
+             sprite["pos"] = np.array(sprite["pos"])
 
     def __getitem__(self, key):
         return self.__map[key]
@@ -207,22 +207,23 @@ class Renderer:
 
     def cast_sprites(self):
         sprite_distances = {}
-        for sprite in self.game_map.sprites:
+        for i, sprite in enumerate(self.game_map.sprites):
             sprite["relative"] = self.player.pos - sprite["pos"]
-            sprite_distances[sprite] = sprite.relative @ sprite.relative
+            sprite_distances[i] = sprite["relative"] @ sprite["relative"]
         #Sprites sorted by distance from player
         sorted_sprites = sorted(sprite_distances, key=sprite_distances.get,\
                                 reverse=True)
+        sorted_sprites = [self.game_map.sprites[i] for i in sorted_sprites]
         #Camera Inverse used to calculate transformed position of sprites
-        cam_inv = np.linalg.inv(self.player.cam[::-1])
+        cam_inv = np.linalg.inv(self.player.cam.T)
         for sprite in sorted_sprites:
             trans_pos = sprite["relative"] @ cam_inv
             if trans_pos[1] < 0:
                 continue
             sprite_screen, sprite_height =\
-                (int((self.width * (1 + trans_pos[0] / trans_pos[1]) / 2)),\
+                (int(self.width * (1 + trans_pos[0] / trans_pos[1]) / 2),\
                 abs(int(self.height / trans_pos[1])))\
-                if trans_pos != 0 else (float("inf"), self.height)
+                if trans_pos[1] != 0 else (0, self.height)
             start_y, end_y = [(i * sprite_height + self.height) // 2\
                               for i in [-1, 1]]
             start_y = 0 if start_y < 0 else start_y
@@ -236,22 +237,21 @@ class Renderer:
             tex_width, tex_height = self.textures[tex_num].shape
             loop_constant_1 = sprite_screen - sprite_height / 2
             loop_constant_2 = tex_width / sprite_height
-            loop_constant_3 = (sprite_height - self.height) // 2
+            loop_constant_3 = (sprite_height - self.height) / 2
             loop_constant_4 = tex_height / sprite_height
             for column in range(start_x, end_x):
                 tex_x = int((column - loop_constant_1) * loop_constant_2)
                 if not 0 <= tex_x <= self.width or\
                    trans_pos[1] > self.distances[column]:
                        continue
-                sprite_buffer = [0] * (end_y - start_y)
+                sprite_buffer = [0] * sprite_height
                 for i in range(start_y, end_y):
-                    tex_y = (i - loop_constant_3) * loop_constant_4
+                    tex_y = int((i - loop_constant_3) * loop_constant_4) - 1
                     char = self.textures[tex_num][tex_x, tex_y]
                     sprite_buffer[i] =  char if char != "0" else\
                         self.buffer[i, column] #'0's are transparent
                 sprite_buffer = np.array(sprite_buffer, dtype=str)
                 self.buffer[start_y:end_y, column] = sprite_buffer
-
 
     def update(self):
         #Clear buffer
@@ -262,6 +262,7 @@ class Renderer:
         for column in range(self.width-1):
             start, end, col_buffer = self.draw_column(*self.cast_ray(column))
             self.buffer[start:end, column] = col_buffer
+        self.cast_sprites()
         self.render()
 
     def render(self):
@@ -326,7 +327,8 @@ def main(screen):
     init_pygame()
     game_map = Map("map1")
     player = Player(game_map)
-    renderer = Renderer(screen, player, game_map, "texture1", "texture2")
+    renderer = Renderer(screen, player, game_map,\
+                        "texture1", "texture2", "texture3")
     controller = Controller(player, renderer)
     while controller.running:
         controller.update()
