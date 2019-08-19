@@ -232,8 +232,7 @@ class Renderer:
                               for i in [-1, 1]]
             start_x = 0 if start_x < 0 else start_x
             end_x = self.width if end_x > self.width else end_x
-            tex_num = sprite["image"]
-            tex_width, tex_height = self.textures[tex_num].shape
+            tex_width, tex_height = self.textures[sprite["image"]].shape
             #Calculate some constants outside the next loops:
             clip_x = sprite_x - sprite_width / 2
             clip_y = (sprite_height - self.height) / 2
@@ -246,7 +245,7 @@ class Renderer:
                     sprite_buffer = [0] * (end_y - start_y)
                     for i in range(start_y, end_y):
                         tex_y = int((i + clip_y) * height_ratio)
-                        char = self.textures[tex_num][tex_x, tex_y]
+                        char = self.textures[sprite["image"]][tex_x, tex_y]
                         sprite_buffer[i - start_y] =  char if char != "0" else\
                             self.buffer[i, column] #'0's are transparent
                     sprite_buffer = np.array(sprite_buffer, dtype=str)
