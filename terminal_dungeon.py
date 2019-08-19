@@ -216,43 +216,41 @@ class Renderer:
                                 reverse=True)
         sorted_sprites = [self.game_map.sprites[i] for i in sorted_sprites]
         #Camera Inverse used to calculate transformed position of sprites
-        cam_inv = np.linalg.inv(self.player.cam.T)
+        cam_inv = np.linalg.inv(-self.player.cam[::-1])
         for sprite in sorted_sprites:
             trans_pos = sprite["relative"] @ cam_inv
-            if trans_pos[1] < 0:
+            if trans_pos[1] <= 0:
                 continue
-            sprite_screen, sprite_height =\
-                (int(self.width * (1 + trans_pos[0] / trans_pos[1]) / 2),\
-                abs(int(self.height / trans_pos[1])))\
-                if trans_pos[1] != 0 else (0, self.height)
-            start_y, end_y = [(i * sprite_height + self.height) // 2\
+            sprite_x = int(self.width * (1 + trans_pos[0] / trans_pos[1]) * .5)
+            sprite_height = int(self.height / trans_pos[1])
+            start_y, end_y = [int((i * sprite_height  + self.height) // 2\
+                              + self.player.z * sprite_height)\
                               for i in [-1, 1]]
             start_y = 0 if start_y < 0 else start_y
             end_y = self.height if end_y > self.height else end_y
-            sprite_height = end_y - start_y #Correct off-by-one errors
-            start_x, end_x = [(i * sprite_height // 2 + sprite_screen)\
+            start_x, end_x = [(i * sprite_height // 2 + sprite_x)\
                               for i in [-1, 1]]
             start_x = 0 if start_x < 0 else start_x
             end_x = self.width if end_x > self.width else end_x
             tex_num = sprite["image"]
             tex_width, tex_height = self.textures[tex_num].shape
-            loop_constant_1 = sprite_screen - sprite_height / 2
-            loop_constant_2 = tex_width / sprite_height
-            loop_constant_3 = (sprite_height - self.height) / 2
-            loop_constant_4 = tex_height / sprite_height
+            #Calculate some constants outside the next loops:
+            clip_x = sprite_x - sprite_height / 2
+            clip_y = (sprite_height - self.height) / 2
+            width_ratio = tex_width / sprite_height
+            height_ratio = tex_height / sprite_height
             for column in range(start_x, end_x):
-                tex_x = int((column - loop_constant_1) * loop_constant_2)
-                if not 0 <= tex_x <= self.width or\
-                   trans_pos[1] > self.distances[column]:
-                       continue
-                sprite_buffer = [0] * sprite_height
-                for i in range(start_y, end_y):
-                    tex_y = int((i - loop_constant_3) * loop_constant_4) - 1
-                    char = self.textures[tex_num][tex_x, tex_y]
-                    sprite_buffer[i] =  char if char != "0" else\
-                        self.buffer[i, column] #'0's are transparent
-                sprite_buffer = np.array(sprite_buffer, dtype=str)
-                self.buffer[start_y:end_y, column] = sprite_buffer
+                tex_x = int((column - clip_x) * width_ratio)
+                if 0 <= column <= self.width and\
+                   trans_pos[1] < self.distances[column]:
+                    sprite_buffer = [0] * (end_y - start_y)
+                    for i in range(start_y, end_y):
+                        tex_y = np.clip(int((i + clip_y) * height_ratio), 0 ,17)
+                        char = self.textures[tex_num][tex_x, tex_y]
+                        sprite_buffer[i - start_y] =  char if char != "0" else\
+                            self.buffer[i, column] #'0's are transparent
+                    sprite_buffer = np.array(sprite_buffer, dtype=str)
+                    self.buffer[start_y:end_y, column] = sprite_buffer
 
     def update(self):
         #Clear buffer
