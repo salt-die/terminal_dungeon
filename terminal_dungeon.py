@@ -240,14 +240,15 @@ class Renderer:
             loop_constant_4 = tex_height / sprite_height
             for column in range(start_x, end_x):
                 tex_x = int((column - loop_constant_1) * loop_constant_2)
-                if 0 <= tex_x <= self.width and\
-                   trans_pos[1] < self.distances[column]:
-                       sprite_buffer = [0] * (end_y - start_y)
-                       for i in range(start_y, end_y):
-                           tex_y = (i - loop_constant_3) * loop_constant_4
-                           char = self.textures[tex_num][tex_x, tex_y]
-                           sprite_buffer[i] =  char if char != "0" else\
-                               self.buffer[i, column] #'0's are transparent
+                if not 0 <= tex_x <= self.width or\
+                   trans_pos[1] > self.distances[column]:
+                       continue
+                sprite_buffer = [0] * (end_y - start_y)
+                for i in range(start_y, end_y):
+                    tex_y = (i - loop_constant_3) * loop_constant_4
+                    char = self.textures[tex_num][tex_x, tex_y]
+                    sprite_buffer[i] =  char if char != "0" else\
+                        self.buffer[i, column] #'0's are transparent
                 sprite_buffer = np.array(sprite_buffer, dtype=str)
                 self.buffer[start_y:end_y, column] = sprite_buffer
 
