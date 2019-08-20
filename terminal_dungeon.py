@@ -225,16 +225,21 @@ class Renderer:
             trans_pos = sprite["relative"] @ cam_inv
             if trans_pos[1] <= 0:
                 continue
+            #Sprite x position
             sprite_x = int(self.width * (1 + trans_pos[0] / trans_pos[1]) * .5)
+            #Sprite width and height -- equal in this case
             sprite_width = sprite_height = int(self.height / trans_pos[1])
+            #Start and end points of vertical lines of the sprite
             start_y, end_y = [(i * sprite_height + self.height) // 2\
                               for i in [-1, 1]]
             start_y = 0 if start_y < 0 else start_y
             end_y = self.height if end_y > self.height else end_y
+            #Start and end points of horizontal lines
             start_x, end_x = [(i * sprite_width // 2 + sprite_x)\
                               for i in [-1, 1]]
             start_x = 0 if start_x < 0 else start_x
             end_x = self.width if end_x > self.width else end_x
+            #Sprite's texture dimensions
             tex_width, tex_height = self.textures[sprite["image"]].shape
             #Calculate some constants outside the next loops:
             clip_x = sprite_x - sprite_width / 2
