@@ -179,32 +179,39 @@ class Renderer:
             line_height = int(self.height / wall_dis)
         if line_height == 0:
             return 0, 0, [] #Draw nothing
+
         line_start, line_end =\
          [int((i * line_height + self.height) / 2 +\
               self.player.z * line_height) for i in [-1, 1]]
         line_start = 0 if line_start < 0 else line_start
         line_end = self.height if line_end > self.height else line_end
         line_height = line_end - line_start #Correct off-by-one errors
+
         #Shading
         shade = line_height if line_height < self.shade_dif else self.shade_dif
         shade += 0 if side else self.side_shade #One side is brighter
-        #Write column to a temporary buffer
+
+        #A buffer to store shade values
         shade_buffer = [shade] * line_height
 
         #Texturing
         if self.textures_on:
             tex_num = self.game_map[tuple(map_pos)] - 1
             texture_width, texture_height = self.textures[tex_num].shape
+
             wall_x =\
              (self.player.pos[1 - side] + wall_dis * ray_angle[1 - side]) % 1
             tex_x = int(wall_x * texture_width)
             if -1**side * ray_angle[side] < 0:
                 tex_x = texture_width - tex_x - 1
+
             #Add or subtract texture values to shade values
             tex_to_wall_ratio = texture_height / line_height
             for i, val in enumerate(shade_buffer):
                 tex_y = int(i * tex_to_wall_ratio)
                 val += 2 * self.textures[tex_num][tex_x, tex_y] - 12
+                #Write to shade_buffer, this clipping logic will be changed
+                #in the future.
                 if val <= 1:
                     shade_buffer[i] = 1
                 elif 1 < val <= self.shades:
@@ -212,7 +219,7 @@ class Renderer:
                 else:
                     shade_buffer[i] = self.shades
 
-        #Convert shade values to ascii
+        #Convert shade values to ascii; convert to array to broadcast to buffer
         column_buffer = [self.ascii_map[val] for val in shade_buffer]
         column_buffer = np.array(column_buffer, dtype=str)
         return line_start, line_end, column_buffer
@@ -224,57 +231,75 @@ class Renderer:
             sprite["relative"] = self.player.pos - sprite["pos"]
             #Squared Distance, we don't need to take the root
             sprite_distances[i] = sprite["relative"] @ sprite["relative"]
-        #Sprites sorted by distance from player--draw furthest away first
+        #Sprites sorted by distance from player.
         sorted_sprites = sorted(sprite_distances, key=sprite_distances.get,\
                                 reverse=True)
         sorted_sprites = [self.game_map.sprites[i] for i in sorted_sprites]
-        #Camera Inverse used to calculate transformed position of sprites
+
+        #Camera Inverse used to calculate transformed position of sprites.
         cam_inv = np.linalg.inv(-self.player.cam[::-1])
+        #Draw each sprite from furthest to closest.
         for sprite in sorted_sprites:
-            #Position of sprites from camera's perspective
+            #Transformed position of sprites due to camera's plane and angle
             trans_pos = sprite["relative"] @ cam_inv
-            if trans_pos[1] <= 0:
+            if trans_pos[1] <= 0: #Sprite is behind player, don't draw it.
                 continue
-            #Sprite x position
+
+            #Sprite x-position on screen
             sprite_x = int(self.width * (1 + trans_pos[0] / trans_pos[1]) * .5)
             #Sprite width and height -- equal in this case
             sprite_width = sprite_height = int(self.height / trans_pos[1])
+
             #Start and end points of vertical lines of the sprite
+            #TODO: Account for jumping player
             start_y, end_y = [(i * sprite_height + self.height) // 2\
                               for i in [-1, 1]]
             start_y = 0 if start_y < 0 else start_y
             end_y = self.height if end_y > self.height else end_y
+
             #Start and end points of horizontal lines
             start_x, end_x = [(i * sprite_width // 2 + sprite_x)\
                               for i in [-1, 1]]
             start_x = 0 if start_x < 0 else start_x
             end_x = self.width if end_x > self.width else end_x
-            #Sprite's texture dimensions
+
             tex_width, tex_height = self.textures[sprite["image"]].shape
+
             #Calculate some constants outside the next loops:
             clip_x = sprite_x - sprite_width / 2
             clip_y = (sprite_height - self.height) / 2
             width_ratio = tex_width / sprite_width
             height_ratio = tex_height / sprite_height
+
+            #Draw sprite -- outer-loop, left-to-right; inner, top-to-bottom
             for column in range(start_x, end_x):
+                #From which column in the texture characters are taken
                 tex_x = int((column - clip_x) * width_ratio)
+
+                #Check that column isn't off-screen and that sprite isn't
+                #blocked by a wall
                 if 0 <= column <= self.width and\
                    trans_pos[1] <= self.distances[column]:
-                    sprite_buffer = [0] * (end_y - start_y)
+
+                    vertical_buffer = [0] * (end_y - start_y)
+
                     for i in range(start_y, end_y):
+                        #From which row characters are taken
                         tex_y = int((i + clip_y) * height_ratio)
                         char = self.textures[sprite["image"]][tex_x, tex_y]
-                        sprite_buffer[i - start_y] =  char if char != "0" else\
-                            self.buffer[i, column] #'0's are transparent
-                    sprite_buffer = np.array(sprite_buffer, dtype=str)
-                    self.buffer[start_y:end_y, column] = sprite_buffer
+                        vertical_buffer[i - start_y] =  char\
+                            if char != "0" else self.buffer[i, column]
+
+                    #Convert to array to broadcast into buffer
+                    vertical_buffer = np.array(vertical_buffer, dtype=str)
+                    self.buffer[start_y:end_y, column] = vertical_buffer
 
     def update(self):
         #Clear buffer
         self.buffer = np.full((self.height, self.width), " ", dtype=str)
         #Draw floor
         self.buffer[self.floor_y:, :] = self.ascii_map[1]
-        #Draw Columns
+        #Draw walls
         for column in range(self.width-1):
             start, end, col_buffer = self.draw_column(*self.cast_ray(column))
             self.buffer[start:end, column] = col_buffer
@@ -313,11 +338,12 @@ class Controller():
 
     def move_player(self):
         #We stop accepting move inputs (but turning is ok) in the middle of a
-        #jump -- the effect is momentum-like.
+        #jump -- the effect is momentum-like movement while in the air.
         if self.player_has_jumped:
             self.jumping_keys = self.keys.copy()
             self.player_has_jumped = False
-        #Constants that make the following conditionals much more readable.
+
+        #Constants that make the following conditionals much more readable
         left = self.keys[pygame.K_LEFT] or self.keys[pygame.K_a]
         right = self.keys[pygame.K_RIGHT] or self.keys[pygame.K_d]
         keys = self.jumping_keys if self.player.is_jumping else self.keys
@@ -325,6 +351,7 @@ class Controller():
         down = keys[pygame.K_DOWN] or keys[pygame.K_s]
         strafe_l = keys[pygame.K_q]
         strafe_r = keys[pygame.K_e]
+
         if left ^ right:
             self.player.turn(left or not right)
         if up ^ down:
