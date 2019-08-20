@@ -2,7 +2,7 @@
 
 Sprites nearly working!:
 
-![Terminal Dungeon Sprite Preview](sprite.gif)
+![Terminal Dungeon Sprite Preview](sprite2.gif)
 
 Terminal Dungeon
 
