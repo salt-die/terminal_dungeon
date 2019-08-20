@@ -57,10 +57,10 @@ class Player:
         self.speed = .1
         self.rotate_speed = .05
         self.jump_time = 8
+        self.field_of_view = .6 #Somewhere between 0 and 1 is reasonable
 
         self.game_map = game_map
         self.pos = pos
-        self.field_of_view = .6 #Somewhere between 0 and 1 is reasonable
         self.cam = np.array([[1, 0], [0, self.field_of_view]]) @\
                    np.array([[np.cos(initial_angle), np.sin(initial_angle)],\
                              [-np.sin(initial_angle), np.cos(initial_angle)]])
@@ -99,9 +99,11 @@ class Player:
     def move(self, speed, strafe=False):
         next_step = self.pos + speed * \
                     (self.cam[0] @ self.perp if strafe else self.cam[0])
+
         #If we can move both coordinates at once, we should
         if not self.game_map[tuple(next_step.astype(int))]:
             self.pos = next_step
+
         #Allows 'sliding' on walls
         elif not self.game_map[int(next_step[0])][int(self.pos[1])]:
             self.pos[0] = next_step[0]
@@ -154,6 +156,7 @@ class Renderer:
             delta = abs(1 / ray_angle)
         step = 2 * np.heaviside(ray_angle, 1) - 1
         side_dis = step * (map_pos + (step + 1) / 2 - self.player.pos) * delta
+
         #Distance to wall
         for hops in range(self.max_hops):
             side = 0 if side_dis[0] < side_dis[1] else 1
@@ -164,10 +167,12 @@ class Renderer:
             if hops == self.max_hops - 1: #No walls in range
                 self.distances[column] = float("inf")
                 return float("inf"), side, map_pos, ray_angle
+
         #Avoiding euclidean distance, to avoid fish-eye effect.
         wall_dis =\
          (map_pos[side] - self.player.pos[side] + (1 - step[side]) / 2)\
          / ray_angle[side]
+
         #True distance for sprite calculations
         self.distances[column] = np.linalg.norm(self.player.pos - map_pos)
         return wall_dis, side, map_pos, ray_angle
@@ -210,6 +215,7 @@ class Renderer:
             for i, val in enumerate(shade_buffer):
                 tex_y = int(i * tex_to_wall_ratio)
                 val += 2 * self.textures[tex_num][tex_x, tex_y] - 12
+
                 #Write to shade_buffer, this clipping logic will be changed
                 #in the future.
                 if val <= 1:
@@ -239,10 +245,12 @@ class Renderer:
 
         #Camera Inverse used to calculate transformed position of sprites.
         cam_inv = np.linalg.inv(-self.player.cam[::-1])
+
         #Draw each sprite from furthest to closest.
         for sprite in sorted_sprites:
             #Transformed position of sprites due to camera's plane and angle
             trans_pos = sprite["relative"] @ cam_inv
+
             if trans_pos[1] <= 0: #Sprite is behind player, don't draw it.
                 continue
 
@@ -298,8 +306,10 @@ class Renderer:
     def update(self):
         #Clear buffer
         self.buffer = np.full((self.height, self.width), " ", dtype=str)
+
         #Draw floor
         self.buffer[self.floor_y:, :] = self.ascii_map[1]
+
         #Draw walls
         for column in range(self.width-1):
             start, end, col_buffer = self.draw_column(*self.cast_ray(column))
@@ -377,6 +387,7 @@ def main(screen):
     init_pygame()
     game_map = Map("map1")
     player = Player(game_map)
+
     #We may mass load textures in the future and pass the list to renderer.
     renderer = Renderer(screen, player, game_map,\
                         "texture1", "texture2", "texture3")
