@@ -210,15 +210,18 @@ class Renderer:
     def cast_sprites(self):
         sprite_distances = {}
         for i, sprite in enumerate(self.game_map.sprites):
+            #Relative position of sprite to player
             sprite["relative"] = self.player.pos - sprite["pos"]
+            #Squared Distance, we don't need to take the root
             sprite_distances[i] = sprite["relative"] @ sprite["relative"]
-        #Sprites sorted by distance from player
+        #Sprites sorted by distance from player--draw furthest away first
         sorted_sprites = sorted(sprite_distances, key=sprite_distances.get,\
                                 reverse=True)
         sorted_sprites = [self.game_map.sprites[i] for i in sorted_sprites]
         #Camera Inverse used to calculate transformed position of sprites
         cam_inv = np.linalg.inv(-self.player.cam[::-1])
         for sprite in sorted_sprites:
+            #Position of sprites from camera's perspective
             trans_pos = sprite["relative"] @ cam_inv
             if trans_pos[1] <= 0:
                 continue
