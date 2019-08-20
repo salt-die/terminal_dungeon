@@ -1,6 +1,6 @@
 ![Terminal Dungeon Preview 3](preview3.gif)
 
-Sprites nearly working!:
+Now with Sprites!:
 
 ![Terminal Dungeon Sprite Preview](sprite2.gif)
 
