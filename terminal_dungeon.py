@@ -23,6 +23,8 @@ import pygame
 
 class Map:
     """
+    A helper class for easy loading of maps.
+
     Each sprite is a dict with keys "pos","image","relative" for position,
     sprite image number, and relative position to player (which will be set
     after first call to cast_sprites in the renderer).
@@ -37,14 +39,18 @@ class Map:
             map_dict = json.load(file)
             self.__map = np.array(map_dict["map"]).T
             self.sprites = map_dict["sprites"]
-        for sprite in self.sprites:
-             sprite["pos"] = np.array(sprite["pos"])
+        for sprite in self.sprites: #lists --> numpy arrays
+            sprite["pos"] = np.array(sprite["pos"])
 
     def __getitem__(self, key):
         return self.__map[key]
 
 
 class Player:
+    """
+    Player class with methods for moving and updating any effects on the
+    player such as falling.
+    """
     def __init__(self, game_map, pos=np.array([5., 5.]),\
                  initial_angle=0):
         #Settings======================================================
@@ -104,6 +110,10 @@ class Player:
 
 
 class Renderer:
+    """
+    The Renderer class is responsible for everything drawn on the screen --
+    including the environment, sprites, menus, items. All textures stored here.
+    """
     def __init__(self, screen, player, game_map, *textures):
         #Settings======================================================
         self.max_hops = 60 #How far rays are cast.
@@ -278,6 +288,9 @@ class Renderer:
 
 
 class Controller():
+    """
+    Controller class handles user input and updates all other objects.
+    """
     def __init__(self, player, renderer):
         self.running = True
         self.player = player
@@ -299,6 +312,12 @@ class Controller():
                 self.keys[event.key] = False
 
     def move_player(self):
+        #We stop accepting move inputs (but turning is ok) in the middle of a
+        #jump -- the effect is momentum-like.
+        if self.player_has_jumped:
+            self.jumping_keys = self.keys.copy()
+            self.player_has_jumped = False
+        #Constants that make the following conditionals much more readable.
         left = self.keys[pygame.K_LEFT] or self.keys[pygame.K_a]
         right = self.keys[pygame.K_RIGHT] or self.keys[pygame.K_d]
         keys = self.jumping_keys if self.player.is_jumping else self.keys
@@ -320,9 +339,6 @@ class Controller():
     def update(self):
         self.renderer.update()
         self.user_input()
-        if self.player_has_jumped:
-           self.jumping_keys = self.keys.copy()
-           self.player_has_jumped = False
         self.move_player()
         self.player.update()
         self.clock.tick(40)
@@ -333,6 +349,7 @@ def main(screen):
     init_pygame()
     game_map = Map("map1")
     player = Player(game_map)
+    #We may mass load textures in the future and pass the list to renderer.
     renderer = Renderer(screen, player, game_map,\
                         "texture1", "texture2", "texture3")
     controller = Controller(player, renderer)
