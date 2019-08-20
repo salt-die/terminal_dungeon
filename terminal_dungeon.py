@@ -340,6 +340,7 @@ class Controller():
     def move_player(self):
         #We stop accepting move inputs (but turning is ok) in the middle of a
         #jump -- the effect is momentum-like movement while in the air.
+        keys = self.jumping_keys if self.player.is_jumping else self.keys
         if self.player_has_jumped:
             self.jumping_keys = self.keys.copy()
             self.player_has_jumped = False
@@ -347,7 +348,6 @@ class Controller():
         #Constants that make the following conditionals much more readable
         left = self.keys[pygame.K_LEFT] or self.keys[pygame.K_a]
         right = self.keys[pygame.K_RIGHT] or self.keys[pygame.K_d]
-        keys = self.jumping_keys if self.player.is_jumping else self.keys
         up = keys[pygame.K_UP] or keys[pygame.K_w]
         down = keys[pygame.K_DOWN] or keys[pygame.K_s]
         strafe_l = keys[pygame.K_q]
