@@ -288,7 +288,7 @@ class Renderer:
                         #From which row characters are taken
                         tex_y = int((i + clip_y) * height_ratio)
                         char = self.textures[sprite["image"]][tex_x, tex_y]
-                        vertical_buffer[i - start_y] =  char\
+                        vertical_buffer[i - start_y] = char\
                             if char != "0" else self.buffer[i, column]
 
                     #Convert to array to broadcast into buffer
