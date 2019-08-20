@@ -225,12 +225,13 @@ class Renderer:
         return line_start, line_end, column_buffer
 
     def cast_sprites(self):
+        #For each sprite, calculate distance (squared) to player
         sprite_distances = {}
         for i, sprite in enumerate(self.game_map.sprites):
             #Relative position of sprite to player
             sprite["relative"] = self.player.pos - sprite["pos"]
-            #Squared Distance, we don't need to take the root
             sprite_distances[i] = sprite["relative"] @ sprite["relative"]
+
         #Sprites sorted by distance from player.
         sorted_sprites = sorted(sprite_distances, key=sprite_distances.get,\
                                 reverse=True)
@@ -353,7 +354,7 @@ class Controller():
         strafe_r = keys[pygame.K_e]
 
         if left ^ right:
-            self.player.turn(left or not right)
+            self.player.turn(left)
         if up ^ down:
             self.player.move((up - down) * self.player.speed)
         if strafe_l ^ strafe_r:
