@@ -6,7 +6,7 @@ Now with Sprites!:
 
 Terminal Dungeon
 
-A Doom-like game that renders to ascii and outputs to terminal!
+A Doom-like game engine that renders to ascii and outputs to terminal!
 
 
 'esc' to exit
