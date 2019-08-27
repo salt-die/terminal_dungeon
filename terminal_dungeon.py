@@ -258,11 +258,11 @@ class Renderer:
             sprite_width = int(self.width / trans_pos[1])
 
             #Start and end points of vertical lines of the sprite
-            #TODO: Account for jumping player
-            start_y, end_y = [(i * sprite_height + self.height) // 2\
+            start_y, end_y = [int((i * sprite_height + self.height) / 2\
+                              + self.player.z * sprite_height)\
                               for i in [-1, 1]]
             if start_y < 0: start_y = 0
-            if end_y > self.height: end_y = self.height
+            if end_y >= self.height: end_y = self.height -1
 
             #Start and end points of horizontal lines
             start_x, end_x = [(i * sprite_width // 2 + sprite_x)\
@@ -274,7 +274,8 @@ class Renderer:
 
             #Calculate some constants outside the next loops:
             clip_x = sprite_x - sprite_width / 2
-            clip_y = (sprite_height - self.height) / 2
+            clip_y = (sprite_height - self.height) / 2\
+                     - self.player.z * sprite_height
             width_ratio = tex_width / sprite_width
             height_ratio = tex_height / sprite_height
 
