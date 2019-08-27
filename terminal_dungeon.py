@@ -252,9 +252,10 @@ class Renderer:
                 continue
 
             #Sprite x-position on screen
-            sprite_x = int(self.width * (1 + trans_pos[0] / trans_pos[1]) * .5)
+            sprite_x = int(self.height * (1 + trans_pos[0] / trans_pos[1]))
             #Sprite width and height -- equal in this case
-            sprite_width = sprite_height = int(self.height / trans_pos[1])
+            sprite_height = int(self.height / trans_pos[1])
+            sprite_width = int(self.width / trans_pos[1])
 
             #Start and end points of vertical lines of the sprite
             #TODO: Account for jumping player
