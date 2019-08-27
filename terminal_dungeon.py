@@ -51,7 +51,7 @@ class Player:
     Player class with methods for moving and updating any effects on the
     player such as falling.
     """
-    def __init__(self, game_map, pos=np.array([5., 5.]),\
+    def __init__(self, game_map, pos=np.array([5., 5.]),
                  initial_angle=0):
         #Settings======================================================
         self.speed = .1
@@ -62,17 +62,17 @@ class Player:
         self.game_map = game_map
         self.pos = pos
         self.cam = np.array([[1, 0], [0, self.field_of_view]]) @\
-                   np.array([[np.cos(initial_angle), np.sin(initial_angle)],\
+                   np.array([[np.cos(initial_angle), np.sin(initial_angle)],
                              [-np.sin(initial_angle), np.cos(initial_angle)]])
-        self.left = np.array([[np.cos(-self.rotate_speed),\
-                               np.sin(-self.rotate_speed)],\
-                              [-np.sin(-self.rotate_speed),\
+        self.left = np.array([[np.cos(-self.rotate_speed),
+                               np.sin(-self.rotate_speed)],
+                              [-np.sin(-self.rotate_speed),
                                 np.cos(-self.rotate_speed)]])
-        self.right = np.array([[np.cos(self.rotate_speed),\
-                                np.sin(self.rotate_speed)],\
-                               [-np.sin(self.rotate_speed),\
+        self.right = np.array([[np.cos(self.rotate_speed),
+                                np.sin(self.rotate_speed)],
+                               [-np.sin(self.rotate_speed),
                                 np.cos(self.rotate_speed)]])
-        self.perp = np.array([[0., -1.],\
+        self.perp = np.array([[0., -1.],
                               [1., 0.]])
         self.time_in_jump = 0
         self.z = 0.
@@ -182,7 +182,7 @@ class Renderer:
             return 0, 0, [] #Draw nothing
 
         line_start, line_end =\
-         [int((i * line_height + self.height) / 2 +\
+         [int((i * line_height + self.height) / 2 +
               self.player.z * line_height) for i in [-1, 1]]
         line_start = 0 if line_start < 0 else line_start
         line_end = self.height if line_end > self.height else line_end
@@ -235,7 +235,7 @@ class Renderer:
             sprite_distances[i] = sprite["relative"] @ sprite["relative"]
 
         #Sprites sorted by distance from player.
-        sorted_sprites = sorted(sprite_distances, key=sprite_distances.get,\
+        sorted_sprites = sorted(sprite_distances, key=sprite_distances.get,
                                 reverse=True)
         sorted_sprites = [self.game_map.sprites[i] for i in sorted_sprites]
 
@@ -259,14 +259,14 @@ class Renderer:
                 continue
 
             #Start and end points of vertical lines of the sprite
-            start_y, end_y = [int((i * sprite_height + self.height) / 2\
-                              + self.player.z * sprite_height)\
+            start_y, end_y = [int((i * sprite_height + self.height) / 2
+                              + self.player.z * sprite_height)
                               for i in [-1, 1]]
             if start_y < 0: start_y = 0
             if end_y >= self.height: end_y = self.height
 
             #Start and end points of horizontal lines
-            start_x, end_x = [(i * sprite_width // 2 + sprite_x)\
+            start_x, end_x = [(i * sprite_width // 2 + sprite_x)
                               for i in [-1, 1]]
             if start_x < 0: start_x = 0
             if end_x > self.width: end_x = self.width
@@ -276,7 +276,7 @@ class Renderer:
             #Calculate some constants outside the next loops:
             clip_x = sprite_x - sprite_width / 2
             clip_y = (sprite_height - self.height) / 2\
-                     - self.player.z * sprite_height
+                      - self.player.z * sprite_height
             width_ratio = tex_width / sprite_width
             height_ratio = tex_height / sprite_height
 
@@ -389,7 +389,7 @@ def main(screen):
     player = Player(game_map)
 
     #We may mass load textures in the future and pass the list to renderer.
-    renderer = Renderer(screen, player, game_map,\
+    renderer = Renderer(screen, player, game_map,
                         "texture1", "texture2", "texture3")
     controller = Controller(player, renderer)
     while controller.running:
