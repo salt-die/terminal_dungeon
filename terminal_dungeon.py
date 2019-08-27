@@ -172,9 +172,8 @@ class Renderer:
         wall_dis =\
          (map_pos[side] - self.player.pos[side] + (1 - step[side]) / 2)\
          / ray_angle[side]
-
-        #True distance for sprite calculations
-        self.distances[column] = np.linalg.norm(self.player.pos - map_pos)
+        #Save distance for sprite calculations.
+        self.distances[column] = wall_dis
         return wall_dis, side, map_pos, ray_angle
 
     def draw_column(self, wall_dis, side, map_pos, ray_angle):
@@ -252,10 +251,12 @@ class Renderer:
                 continue
 
             #Sprite x-position on screen
-            sprite_x = int(self.height * (1 + trans_pos[0] / trans_pos[1]))
+            sprite_x = int(self.height * (1 + trans_pos[0] / trans_pos[1]) - 1)
             #Sprite width and height
             sprite_height = int(self.height / trans_pos[1])
-            sprite_width = int(self.width / trans_pos[1])
+            sprite_width = int(self.width / trans_pos[1] / 2)
+            if not all([sprite_height, sprite_width]): #Sprite too small.
+                continue
 
             #Start and end points of vertical lines of the sprite
             start_y, end_y = [int((i * sprite_height + self.height) / 2\
