@@ -178,10 +178,7 @@ class Renderer:
         return wall_dis, side, map_pos, ray_angle
 
     def draw_column(self, wall_dis, side, map_pos, ray_angle):
-        if wall_dis == 0:
-            line_height = self.height
-        else:
-            line_height = int(self.height / wall_dis)
+        line_height = int(self.height / wall_dis) if wall_dis else self.height
         if line_height == 0:
             return 0, 0, [] #Draw nothing
 
