@@ -253,7 +253,7 @@ class Renderer:
 
             #Sprite x-position on screen
             sprite_x = int(self.height * (1 + trans_pos[0] / trans_pos[1]))
-            #Sprite width and height -- equal in this case
+            #Sprite width and height
             sprite_height = int(self.height / trans_pos[1])
             sprite_width = int(self.width / trans_pos[1])
 
