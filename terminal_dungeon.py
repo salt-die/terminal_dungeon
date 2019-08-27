@@ -263,7 +263,7 @@ class Renderer:
                               + self.player.z * sprite_height)\
                               for i in [-1, 1]]
             if start_y < 0: start_y = 0
-            if end_y >= self.height: end_y = self.height -1
+            if end_y >= self.height: end_y = self.height
 
             #Start and end points of horizontal lines
             start_x, end_x = [(i * sprite_width // 2 + sprite_x)\
