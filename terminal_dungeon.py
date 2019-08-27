@@ -260,14 +260,14 @@ class Renderer:
             #TODO: Account for jumping player
             start_y, end_y = [(i * sprite_height + self.height) // 2\
                               for i in [-1, 1]]
-            start_y = 0 if start_y < 0 else start_y
-            end_y = self.height if end_y > self.height else end_y
+            if start_y < 0: start_y = 0
+            if end_y > self.height: end_y = self.height
 
             #Start and end points of horizontal lines
             start_x, end_x = [(i * sprite_width // 2 + sprite_x)\
                               for i in [-1, 1]]
-            start_x = 0 if start_x < 0 else start_x
-            end_x = self.width if end_x > self.width else end_x
+            if start_x < 0: start_x = 0
+            if end_x > self.width: end_x = self.width
 
             tex_width, tex_height = self.textures[sprite["image"]].shape
 
