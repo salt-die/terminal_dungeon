@@ -14,9 +14,6 @@ A Doom-like game engine that renders to ascii and outputs to terminal!
 't' to turn off textures
 
 
-IMPORTANT:
-Make sure the pygame window is focused for input events to be received.
-
 Depending on your terminal font, Renderer.ascii_map may need to be adjusted.
 If you'd like to make an ascii map more suitable to your terminal's font,
 check my Snippets repository for a script that grabs mean brightness of
