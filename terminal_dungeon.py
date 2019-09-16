@@ -14,10 +14,10 @@ Values stored in textures should range from 0-9.  Values below 6 are
 subtractive and above 6 are additive.
 """
 import json
-import curses
 import numpy as np
 from pynput import keyboard
 from pynput.keyboard import Key, KeyCode
+import curses
 
 class Map:
     """
@@ -309,7 +309,7 @@ class Renderer:
         self.buffer[self.floor_y:, :] = self.ascii_map[1]
 
         #Draw walls
-        for column in range(self.width-1):
+        for column in range(self.width - 1):
             start, end, col_buffer = self.draw_column(*self.cast_ray(column))
             self.buffer[start:end, column] = col_buffer
 
@@ -343,6 +343,7 @@ class Controller():
     def user_input(self):
         if self.keys.get(Key.esc):
             self.running = False
+            self.listener.stop()
         if self.keys.get(KeyCode(char='t')):
             self.renderer.textures_on = not self.renderer.textures_on
         self.movement()
@@ -392,7 +393,6 @@ def main(screen):
     init_curses(screen)
     game_map = Map("map1")
     player = Player(game_map)
-
     #We may mass load textures in the future and pass the list to renderer.
     renderer = Renderer(screen, player, game_map,
                         "texture1", "texture2", "texture3")
