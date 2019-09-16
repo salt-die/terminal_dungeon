@@ -122,7 +122,7 @@ class Renderer:
         self.max_hops = 60 #How far rays are cast.
 
         self.screen = screen
-        self.height, self.width = screen.getmaxyx()
+        self.height, self.width = self.screen.getmaxyx()
         self.floor_y = self.height // 2
         self.distances = [0] * self.width
         self.player = player
@@ -402,6 +402,8 @@ def main(screen):
     controller = Controller(player, renderer)
     while controller.running:
         controller.update()
+    screen.clear()
+    curses.endwin()
 
 def init_curses(screen):
     curses.noecho()
