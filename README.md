@@ -13,6 +13,9 @@ A Doom-like game engine that renders to ascii and outputs to terminal!
 
 't' to turn off textures
 
+'wasdqe' or arrow-keys to move
+
+'space' to jump
 
 Depending on your terminal font, Renderer.ascii_map may need to be adjusted.
 If you'd like to make an ascii map more suitable to your terminal's font,
