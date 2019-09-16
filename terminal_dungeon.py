@@ -19,7 +19,8 @@ subtractive and above 6 are additive.
 import json
 import curses
 import numpy as np
-import pygame
+from pynput import keyboard
+from pynput.keyboard import Key, KeyCode
 
 class Map:
     """
@@ -314,7 +315,11 @@ class Renderer:
         for column in range(self.width-1):
             start, end, col_buffer = self.draw_column(*self.cast_ray(column))
             self.buffer[start:end, column] = col_buffer
+
+        #Draw sprites
         self.cast_sprites()
+
+        #Push buffer to screen
         self.render()
 
     def render(self):
@@ -331,23 +336,27 @@ class Controller():
         self.running = True
         self.player = player
         self.renderer = renderer
-        self.clock = pygame.time.Clock()
-        self.keys = [False] * 324
-        self.jumping_keys = [False] * 324
+        self.keys = {}
+        self.jumping_keys = {}
+        self.listener = keyboard.Listener(on_press=self.pressed,
+                                          on_release=self.released)
+        self.listener.start()
         self.player_has_jumped = False
 
     def user_input(self):
-        for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    self.running = False
-                elif event.key == pygame.K_t:
-                    self.renderer.textures_on = not self.renderer.textures_on
-                self.keys[event.key] = True
-            elif event.type == pygame.KEYUP:
-                self.keys[event.key] = False
+        if self.keys.get(Key.esc):
+            self.running = False
+        if self.keys.get(KeyCode(char='t')):
+            self.renderer.textures_on = not self.renderer.textures_on
+        self.movement()
 
-    def move_player(self):
+    def pressed(self, key):
+        self.keys[key] = True
+
+    def released(self, key):
+        self.keys[key] = False
+
+    def movement(self):
         #We stop accepting move inputs (but turning is ok) in the middle of a
         #jump -- the effect is momentum-like movement while in the air.
         keys = self.jumping_keys if self.player.is_jumping else self.keys
@@ -356,12 +365,14 @@ class Controller():
             self.player_has_jumped = False
 
         #Constants that make the following conditionals much more readable
-        left = self.keys[pygame.K_LEFT] or self.keys[pygame.K_a]
-        right = self.keys[pygame.K_RIGHT] or self.keys[pygame.K_d]
-        up = keys[pygame.K_UP] or keys[pygame.K_w]
-        down = keys[pygame.K_DOWN] or keys[pygame.K_s]
-        strafe_l = keys[pygame.K_q]
-        strafe_r = keys[pygame.K_e]
+        left = self.keys.get(Key.left, False) or\
+               self.keys.get(KeyCode(char='a'), False)
+        right = self.keys.get(Key.right, False) or\
+                self.keys.get(KeyCode(char='d'), False)
+        up = keys.get(Key.up, False) or keys.get(KeyCode(char='w'), False)
+        down = keys.get(Key.down, False) or keys.get(KeyCode(char='s'), False)
+        strafe_l = keys.get(KeyCode(char='q'), False)
+        strafe_r = keys.get(KeyCode(char='e'), False)
 
         if left ^ right:
             self.player.turn(left)
@@ -369,22 +380,19 @@ class Controller():
             self.player.move((up - down) * self.player.speed)
         if strafe_l ^ strafe_r:
             self.player.move((strafe_l - strafe_r) * self.player.speed, True)
-        if self.keys[pygame.K_SPACE]:
+        if self.keys.get(Key.space):
             self.player_has_jumped = True
             self.player.is_jumping = True
-            self.keys[pygame.K_SPACE] = False
+            self.keys[Key.space] = False
 
     def update(self):
         self.renderer.update()
         self.user_input()
-        self.move_player()
         self.player.update()
-        self.clock.tick(40)
 
 
 def main(screen):
     init_curses(screen)
-    init_pygame()
     game_map = Map("map1")
     player = Player(game_map)
 
@@ -394,13 +402,6 @@ def main(screen):
     controller = Controller(player, renderer)
     while controller.running:
         controller.update()
-    pygame.display.quit()
-    pygame.quit()
-
-def init_pygame():
-    pygame.init()
-    pygame.display.set_mode((305, 2))
-    pygame.display.set_caption('Focus this window to move.')
 
 def init_curses(screen):
     curses.noecho()
