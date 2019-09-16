@@ -15,9 +15,10 @@ subtractive and above 6 are additive.
 """
 import json
 import numpy as np
+import curses
 from pynput import keyboard
 from pynput.keyboard import Key, KeyCode
-import curses
+
 
 class Map:
     """
