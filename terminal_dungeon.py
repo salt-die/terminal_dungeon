@@ -349,6 +349,7 @@ class Controller():
             self.listener.stop()
         if self.keys.get(KeyCode(char='t')):
             self.renderer.textures_on = not self.renderer.textures_on
+            self.keys[KeyCode(char='t')] = False
         self.movement()
 
     def pressed(self, key):
