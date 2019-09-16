@@ -4,6 +4,8 @@ A terminal based ray-casting engine.
 
 'esc' to exit
 't' to turn off textures
+'wasdqe' or arrow-keys to move
+'space' to jump
 
 Depending on your terminal font, Renderer.ascii_map may need to be adjusted.
 If you'd like to make an ascii map more suitable to your terminal's font,
