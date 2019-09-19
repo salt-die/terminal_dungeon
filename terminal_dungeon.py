@@ -30,9 +30,7 @@ class Map:
     sprite image number, and relative position to player (which will be set
     after first call to cast_sprites in the renderer).
     """
-    __map = 0
     def __init__(self, file_name):
-        self.sprites = []
         self.load(file_name)
 
     def load(self, file_name):
@@ -128,7 +126,6 @@ class Renderer:
         self.player = player
         self.game_map = game_map
         self.buffer = np.full((self.height, self.width), " ", dtype=str)
-        self.textures = []
         self.load_textures(*textures)
         self.textures_on = True
 
@@ -143,12 +140,11 @@ class Renderer:
         self.shade_dif = self.shades - self.side_shade
 
     def load_textures(self, *texture_names):
-        textures = []
+        self.textures = []
         for name in texture_names:
             with open(name + ".json", 'r') as texture:
                 pre_load = json.load(texture)
-                textures.append(np.array(pre_load).T)
-        self.textures = textures
+                self.textures.append(np.array(pre_load).T)
 
     def cast_ray(self, column):
         ray_angle = self.player.cam.T @ (column * self.hght_inv + self.const)
@@ -338,10 +334,10 @@ class Controller():
         self.renderer = renderer
         self.keys = {}
         self.jumping_keys = {}
+        self.player_has_jumped = False
         self.listener = keyboard.Listener(on_press=self.pressed,
                                           on_release=self.released)
         self.listener.start()
-        self.player_has_jumped = False
 
     def user_input(self):
         if self.keys.get(Key.esc):
@@ -403,8 +399,8 @@ def main(screen):
     controller = Controller(player, renderer)
     while controller.running:
         controller.update()
-    screen.clear()
     curses.endwin()
+    controller.listener.stop()
 
 def init_curses(screen):
     curses.noecho()
