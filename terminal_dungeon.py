@@ -400,7 +400,6 @@ def main(screen):
     while controller.running:
         controller.update()
     curses.endwin()
-    controller.listener.stop()
 
 def init_curses(screen):
     curses.noecho()
