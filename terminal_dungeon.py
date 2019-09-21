@@ -161,9 +161,10 @@ class Renderer:
             map_pos[side] += step[side]
             if self.game_map[tuple(map_pos)]:
                 break
-            if hops == self.max_hops - 1: #No walls in range
-                self.distances[column] = float("inf")
-                return float("inf"), side, map_pos, ray_angle
+        else:
+            #No walls in range
+            self.distances[column] = float("inf")
+            return float("inf"), side, map_pos, ray_angle
 
         #Avoiding euclidean distance, to avoid fish-eye effect.
         wall_dis =\
