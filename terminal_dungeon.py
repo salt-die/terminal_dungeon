@@ -147,6 +147,21 @@ class Renderer:
                 self.textures.append(np.array(pre_load).T)
 
     def cast_ray(self, column):
+        """
+        TODO: Pass a full numpy array of columns all at once -- we need to
+        adjust the for-loop to accommodate, but everything else should stay
+        pretty much untouched besides using an einsum to calculate ray_angle.
+
+        #Notes for ray_angle if vectorized columns -- I think this is right for
+        #doing element-wise scalar*vector and then element-wise matrix_mul
+        column_transform = np.einsum('i,j->ij',columns, self.hght_inv) + self.const
+        ray_angles = np.einsum('jk,ij->ij', cam, column_transform)
+
+        A possible solution for the vectorized for-loop is to create an
+        array that keeps track of whether a column has hit a wall and then
+        use np.where to only do the operations inside the loop for arrays that
+        haven't hit a wall yet.
+        """
         ray_angle = self.player.cam.T @ (column * self.hght_inv + self.const)
         map_pos = self.player.pos.astype(int)
         with np.errstate(divide="ignore"):
