@@ -125,7 +125,6 @@ class Renderer:
         self.distances = [0] * self.width
         self.player = player
         self.game_map = game_map
-        self.buffer = np.full((self.height, self.width), " ", dtype=str)
         self.load_textures(*textures)
         self.textures_on = True
 
