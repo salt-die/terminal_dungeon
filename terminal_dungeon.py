@@ -355,10 +355,10 @@ class Controller():
         self.listener.start()
 
     def user_input(self):
-        if self.keys.get(Key.esc):
+        if self.keys[Key.esc]:
             self.running = False
             self.listener.stop()
-        if self.keys.get(KeyCode(char='t')):
+        if self.keys[KeyCode(char='t')]:
             self.renderer.textures_on = not self.renderer.textures_on
             self.keys[KeyCode(char='t')] = False
         self.movement()
