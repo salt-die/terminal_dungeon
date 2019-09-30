@@ -15,6 +15,7 @@ unicode characters.
 Values stored in textures should range from 0-9.  Values below 6 are
 subtractive and above 6 are additive.
 """
+from collections import defaultdict
 import json
 import numpy as np
 import curses
@@ -347,8 +348,7 @@ class Controller():
         self.running = True
         self.player = player
         self.renderer = renderer
-        self.keys = {}
-        self.jumping_keys = {}
+        self.keys = self.jumping_keys = defaultdict(bool)
         self.player_has_jumped = False
         self.listener = keyboard.Listener(on_press=self.pressed,
                                           on_release=self.released)
@@ -378,14 +378,12 @@ class Controller():
             self.player_has_jumped = False
 
         #Constants that make the following conditionals much more readable
-        left = self.keys.get(Key.left, False) or\
-               self.keys.get(KeyCode(char='a'), False)
-        right = self.keys.get(Key.right, False) or\
-                self.keys.get(KeyCode(char='d'), False)
-        up = keys.get(Key.up, False) or keys.get(KeyCode(char='w'), False)
-        down = keys.get(Key.down, False) or keys.get(KeyCode(char='s'), False)
-        strafe_l = keys.get(KeyCode(char='q'), False)
-        strafe_r = keys.get(KeyCode(char='e'), False)
+        left = self.keys[Key.left] or self.keys[KeyCode(char='a')]
+        right = self.keys[Key.right] or self.keys[KeyCode(char='d')]
+        up = keys[Key.up] or keys[KeyCode(char='w')]
+        down = keys[Key.down] or keys[KeyCode(char='s')]
+        strafe_l = keys[KeyCode(char='q')]
+        strafe_r = keys[KeyCode(char='e')]
 
         if left ^ right:
             self.player.turn(left)
@@ -393,7 +391,7 @@ class Controller():
             self.player.move((up - down) * self.player.speed)
         if strafe_l ^ strafe_r:
             self.player.move((strafe_l - strafe_r) * self.player.speed, True)
-        if self.keys.get(Key.space):
+        if self.keys[Key.space]:
             self.player_has_jumped = True
             self.player.is_jumping = True
             self.keys[Key.space] = False
