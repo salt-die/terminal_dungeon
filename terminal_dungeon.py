@@ -134,7 +134,7 @@ class Renderer:
         self.const = np.array([1, -1])
 
         #Shading Constants--It's safe to modify ascii_map==============
-        self.ascii_map = dict(enumerate(list(' .,:;<+*LtCa4U80dQM@')))
+        self.ascii_map = dict(enumerate(' .,:;<+*LtCa4U80dQM@'))
         self.shades = len(self.ascii_map) - 1
         self.side_shade = (self.shades + 1) // 5
         self.shade_dif = self.shades - self.side_shade
@@ -169,7 +169,7 @@ class Renderer:
         step = 2 * np.heaviside(ray_angle, 1) - 1
         side_dis = step * (map_pos + (step + 1) / 2 - self.player.pos) * delta
 
-        #Distance to wall
+        #Cast a ray until we hit a wall or hit max_range
         for hops in range(self.max_hops):
             side = 0 if side_dis[0] < side_dis[1] else 1
             side_dis[side] += delta[side]
@@ -412,6 +412,7 @@ def main(screen):
     controller = Controller(player, renderer)
     while controller.running:
         controller.update()
+    curses.flushinp()
     curses.endwin()
 
 def init_curses(screen):
