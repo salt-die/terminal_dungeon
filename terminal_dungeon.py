@@ -171,7 +171,7 @@ class Renderer:
         else:
             # No walls in range
             self.distances[column] = float("inf")
-            return float("inf"), side, map_pos, ray_angle
+            return 0, 0, []
 
         # Avoiding euclidean distance, to avoid fish-eye effect.
         wall_dis = (map_pos[side] - self.player.pos[side] + (1 - step[side]) / 2) / ray_angle[side]
@@ -182,8 +182,9 @@ class Renderer:
         if line_height == 0:
             return 0, 0, []  # Draw nothing
 
-        line_start = max(0, int((-line_height + self.height) / 2 + self.player.z * line_height))
-        line_end = min(self.height, int((line_height + self.height) / 2 + self.player.z * line_height))
+        jump_height = self.player.z * line_height
+        line_start = max(0, int((-line_height + self.height) / 2 + jump_height))
+        line_end = min(self.height, int((line_height + self.height) / 2 + jump_height))
         line_height = line_end - line_start  # Correct off-by-one errors
 
         # Shading
@@ -198,14 +199,16 @@ class Renderer:
             tex_num = self.game_map[tuple(map_pos)] - 1
             texture_width, texture_height = self.textures[tex_num].shape
 
-            wall_x =\
-             (self.player.pos[1 - side] + wall_dis * ray_angle[1 - side]) % 1
+            wall_x = (self.player.pos[1 - side] + wall_dis * ray_angle[1 - side]) % 1
             tex_x = int(wall_x * texture_width)
             if -1**side * ray_angle[side] < 0:
                 tex_x = texture_width - tex_x - 1
 
+            tex_ys = (np.arange(line_height) * (texture_height / line_height)).astype(int)
             # Add or subtract texture values to shade values
-            tex_ys = (np.arange(line_height) * texture_height / line_height).astype(int)
+            # Note 2 * n - 12 is 0 for n = 6, i.e., values above 6 are additive and
+            # below 6 are subtractive. For larger ascii maps, one may want to use linear
+            # equation with a larger slope.
             shade_buffer += 2 * self.textures[tex_num][tex_x, tex_ys] - 12
             np.clip(shade_buffer, 1, self.shades, out=shade_buffer)
 
