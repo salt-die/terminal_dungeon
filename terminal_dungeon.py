@@ -134,7 +134,7 @@ class Renderer:
         self.const = np.array([1, -1])
 
         #Shading Constants--It's safe to modify ascii_map==============
-        self.ascii_map = dict(enumerate(' .,:;<+*LtCa4U80dQM@'))
+        self.ascii_map = np.array(list(' .,:;<+*LtCa4U80dQM@'))
         self.shades = len(self.ascii_map) - 1
         self.side_shade = (self.shades + 1) // 5
         self.shade_dif = self.shades - self.side_shade
@@ -148,19 +148,10 @@ class Renderer:
 
     def cast_ray(self, column):
         """
-        TODO: Pass a full numpy array of columns all at once -- we need to
-        adjust the for-loop to accommodate, but everything else should stay
-        pretty much untouched besides using an einsum to calculate ray_angle.
+        Cast rays and draw columns whose heights correspond to the distance a ray traveled
+        before it hit a wall.
 
-        #Notes for ray_angle if vectorized columns -- I think this is right for
-        #doing element-wise scalar*vector and then element-wise matrix_mul
-        column_transform = np.einsum('i,j->ij',columns, self.hght_inv) + self.const
-        ray_angles = np.einsum('jk,ij->ij', cam, column_transform)
-
-        A possible solution for the vectorized for-loop is to create an
-        array that keeps track of whether a column has hit a wall and then
-        use np.where to only do the operations inside the loop for arrays that
-        haven't hit a wall yet.
+        TODO: Pass a full numpy array of columns all at once.
         """
         ray_angle = self.player.cam.T @ (column * self.hght_inv + self.const)
         map_pos = self.player.pos.astype(int)
@@ -187,18 +178,14 @@ class Renderer:
          / ray_angle[side]
         #Save distance for sprite calculations.
         self.distances[column] = wall_dis
-        return wall_dis, side, map_pos, ray_angle
 
-    def draw_column(self, wall_dis, side, map_pos, ray_angle):
         line_height = int(self.height / wall_dis) if wall_dis else self.height
         if line_height == 0:
             return 0, 0, [] #Draw nothing
 
-        line_start, line_end =\
-         [int((i * line_height + self.height) / 2 +
-              self.player.z * line_height) for i in [-1, 1]]
-        line_start = 0 if line_start < 0 else line_start
-        line_end = self.height if line_end > self.height else line_end
+        line_end, line_start = np.clip(((self.const * line_height + self.height) / 2\
+                                         + self.player.z * line_height).astype(int),
+                                       0, self.height)
         line_height = line_end - line_start #Correct off-by-one errors
 
         #Shading
@@ -206,7 +193,7 @@ class Renderer:
         shade += 0 if side else self.side_shade #One side is brighter
 
         #A buffer to store shade values
-        shade_buffer = [shade] * line_height
+        shade_buffer = np.full(line_height, shade)
 
         #Texturing
         if self.textures_on:
@@ -220,24 +207,11 @@ class Renderer:
                 tex_x = texture_width - tex_x - 1
 
             #Add or subtract texture values to shade values
-            tex_to_wall_ratio = texture_height / line_height
-            for i, val in enumerate(shade_buffer):
-                tex_y = int(i * tex_to_wall_ratio)
-                val += 2 * self.textures[tex_num][tex_x, tex_y] - 12
+            tex_ys = (np.arange(line_height) * texture_height / line_height).astype(int)
+            shade_buffer += 2 * self.textures[tex_num][tex_x, tex_ys] - 12
+            np.clip(shade_buffer, 1, self.shades, out=shade_buffer)
 
-                #Write to shade_buffer, this clipping logic will be changed
-                #in the future.
-                if val <= 1:
-                    shade_buffer[i] = 1
-                elif 1 < val <= self.shades:
-                    shade_buffer[i] = val
-                else:
-                    shade_buffer[i] = self.shades
-
-        #Convert shade values to ascii; convert to array to broadcast to buffer
-        column_buffer = [self.ascii_map[val] for val in shade_buffer]
-        column_buffer = np.array(column_buffer, dtype=str)
-        return line_start, line_end, column_buffer
+        return line_start, line_end, self.ascii_map[shade_buffer]
 
     def cast_sprites(self):
         #For each sprite, calculate distance (squared) to player
@@ -248,8 +222,7 @@ class Renderer:
             sprite_distances[i] = sprite["relative"] @ sprite["relative"]
 
         #Sprites sorted by distance from player.
-        sorted_sprites = sorted(sprite_distances, key=sprite_distances.get,
-                                reverse=True)
+        sorted_sprites = sorted(sprite_distances, key=sprite_distances.get, reverse=True)
         sorted_sprites = [self.game_map.sprites[i] for i in sorted_sprites]
 
         #Camera Inverse used to calculate transformed position of sprites.
@@ -325,7 +298,7 @@ class Renderer:
 
         #Draw walls
         for column in range(self.width - 1):
-            start, end, col_buffer = self.draw_column(*self.cast_ray(column))
+            start, end, col_buffer = self.cast_ray(column)
             self.buffer[start:end, column] = col_buffer
 
         #Draw sprites
@@ -400,7 +373,6 @@ class Controller():
         self.renderer.update()
         self.user_input()
         self.player.update()
-
 
 def main(screen):
     init_curses(screen)
