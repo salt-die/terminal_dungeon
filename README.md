@@ -4,19 +4,19 @@ Now with Sprites!:
 
 ![Terminal Dungeon Sprite Preview](sprite2.gif)
 
-Terminal Dungeon
+# Terminal Dungeon
 
 A Doom-like game engine that renders to ascii and outputs to terminal!
 
 
-'esc' to exit
+* **'esc'** to exit
 
-'t' to turn off textures
+* **'t'** to turn off textures
 
-'wasdqe' or arrow-keys to move
+* **'wasdqe'** or arrow-keys to move
 
-'space' to jump
-
+* **'space'** to jump
+***********
 Depending on your terminal font, Renderer.ascii_map may need to be adjusted.
 If you'd like to make an ascii map more suitable to your terminal's font,
 check my Snippets repository for a script that grabs mean brightness of
@@ -24,7 +24,7 @@ unicode characters.
 
 Values stored in textures should range from 0-9.  Values below 6 are
 subtractive and above 6 are additive.
-
+***********
 This project wouldn't have been possible without the following valuable
 resources:
 
