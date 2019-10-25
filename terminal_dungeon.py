@@ -242,15 +242,12 @@ class Renderer:
             # Sprite width and height
             sprite_height = int(self.height / trans_pos[1])
             sprite_width = int(self.width / trans_pos[1] / 2)
-            if not all([sprite_height, sprite_width]): #Sprite too small.
+            if not all([sprite_height, sprite_width]):  # Sprite too small.
                 continue
 
-            # Start and end points of vertical lines of the sprite
-            start_y, end_y = [int((i * sprite_height + self.height) / 2
-                              + self.player.z * sprite_height)
-                              for i in [-1, 1]]
-            if start_y < 0: start_y = 0
-            if end_y >= self.height: end_y = self.height
+            jump_height = self.player.z * sprite_height
+            start_y = max(0, int((-sprite_height + self.height) / 2 + jump_height))
+            end_y = min(self.height, int((sprite_height + self.height) / 2 + jump_height))
 
             # Start and end points of horizontal lines
             start_x, end_x = [(i * sprite_width // 2 + sprite_x)
