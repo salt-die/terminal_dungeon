@@ -266,18 +266,19 @@ class Renderer:
                 tex_x = int((column - clip_x) * width_ratio)
 
                 # Check that column isn't off-screen and that sprite isn't blocked by a wall.
-                if 0 <= column <= self.width and trans_pos[1] <= self.distances[column]:
+                if not (0 <= column <= self.width and trans_pos[1] <= self.distances[column]):
+                    continue
 
-                    vertical_buffer = [0] * (end_y - start_y)
+                vertical_buffer = [0] * (end_y - start_y)
 
-                    for i in range(start_y, end_y):
-                        # From which row characters are taken
-                        tex_y = int((i + clip_y) * height_ratio)
-                        char = self.textures[sprite["image"]][tex_x, tex_y]
-                        vertical_buffer[i - start_y] = char\
-                            if char != "0" else self.buffer[i, column]
+                for i in range(start_y, end_y):
+                    # From which row characters are taken
+                    tex_y = int((i + clip_y) * height_ratio)
+                    char = self.textures[sprite["image"]][tex_x, tex_y]
+                    vertical_buffer[i - start_y] = char\
+                        if char != "0" else self.buffer[i, column]
 
-                    self.buffer[start_y:end_y, column] = vertical_buffer
+                self.buffer[start_y:end_y, column] = vertical_buffer
 
     def update(self):
         # Clear buffer
