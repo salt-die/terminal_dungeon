@@ -156,7 +156,7 @@ class Renderer:
         step = 2 * np.heaviside(ray_angle, 1) - 1
         side_dis = step * (map_pos + (step + 1) / 2 - self.player.pos) * delta
 
-        #Cast a ray until we hit a wall or hit max_range
+        # Cast a ray until we hit a wall or hit max_range
         for hops in range(self.max_hops):
             side = 0 if side_dis[0] < side_dis[1] else 1
             side_dis[side] += delta[side]
@@ -164,11 +164,11 @@ class Renderer:
             if self.game_map[tuple(map_pos)]:
                 break
         else:
-            #No walls in range
+            # No walls in range
             self.distances[column] = float("inf")
             return float("inf"), side, map_pos, ray_angle
 
-        #Avoiding euclidean distance, to avoid fish-eye effect.
+        # Avoiding euclidean distance, to avoid fish-eye effect.
         wall_dis =\
          (map_pos[side] - self.player.pos[side] + (1 - step[side]) / 2)\
          / ray_angle[side]
@@ -183,7 +183,7 @@ class Renderer:
         line_end = min(self.height, int((line_height + self.height) / 2 + self.player.z * line_height))
         line_height = line_end - line_start  # Correct off-by-one errors
 
-        #Shading
+        # Shading
         shade = min(line_height, self.shade_dif)
         shade += 0 if side else self.side_shade  # One side is brighter
 
@@ -298,7 +298,7 @@ class Renderer:
         # Draw sprites
         self.cast_sprites()
 
-        #Push buffer to screen
+        # Push buffer to screen
         self.render()
 
     def render(self):
@@ -311,12 +311,13 @@ class Controller():
     """
     Controller class handles user input and updates all other objects.
     """
+    running = True
+    keys = jumping_keys = defaultdict(bool)
+    player_has_jumped = False
+
     def __init__(self, player, renderer):
-        self.running = True
         self.player = player
         self.renderer = renderer
-        self.keys = self.jumping_keys = defaultdict(bool)
-        self.player_has_jumped = False
         self.listener = keyboard.Listener(on_press=self.pressed,
                                           on_release=self.released)
         self.listener.start()
