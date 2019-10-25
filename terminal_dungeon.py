@@ -212,7 +212,7 @@ class Renderer:
             shade_buffer += 2 * self.textures[tex_num][tex_x, tex_ys] - 12
             np.clip(shade_buffer, 1, self.shades, out=shade_buffer)
 
-        return line_start, line_end, self.ascii_map[shade_buffer]
+        self.buffer[line_start:line_end, column] = self.ascii_map[shade_buffer]
 
     def cast_sprites(self):
         # For each sprite, calculate distance (squared) to player
@@ -256,8 +256,7 @@ class Renderer:
 
             # Calculate some constants outside the next loops:
             clip_x = sprite_x - sprite_width / 2
-            clip_y = (sprite_height - self.height) / 2\
-                      - self.player.z * sprite_height
+            clip_y = (sprite_height - self.height) / 2 - self.player.z * sprite_height
             width_ratio = tex_width / sprite_width
             height_ratio = tex_height / sprite_height
 
@@ -267,8 +266,7 @@ class Renderer:
                 tex_x = int((column - clip_x) * width_ratio)
 
                 # Check that column isn't off-screen and that sprite isn't blocked by a wall.
-                if 0 <= column <= self.width and\
-                   trans_pos[1] <= self.distances[column]:
+                if 0 <= column <= self.width and trans_pos[1] <= self.distances[column]:
 
                     vertical_buffer = [0] * (end_y - start_y)
 
@@ -279,8 +277,6 @@ class Renderer:
                         vertical_buffer[i - start_y] = char\
                             if char != "0" else self.buffer[i, column]
 
-                    # Convert to array to broadcast into buffer
-                    vertical_buffer = np.array(vertical_buffer, dtype=str)
                     self.buffer[start_y:end_y, column] = vertical_buffer
 
     def update(self):
@@ -292,8 +288,7 @@ class Renderer:
 
         # Draw walls
         for column in range(self.width - 1):
-            start, end, col_buffer = self.cast_ray(column)
-            self.buffer[start:end, column] = col_buffer
+            self.cast_ray(column)
 
         # Draw sprites
         self.cast_sprites()
