@@ -249,11 +249,8 @@ class Renderer:
             start_y = max(0, int((-sprite_height + self.height) / 2 + jump_height))
             end_y = min(self.height, int((sprite_height + self.height) / 2 + jump_height))
 
-            # Start and end points of horizontal lines
-            start_x, end_x = [(i * sprite_width // 2 + sprite_x)
-                              for i in [-1, 1]]
-            if start_x < 0: start_x = 0
-            if end_x > self.width: end_x = self.width
+            start_x = max(0, -sprite_width // 2 + sprite_x)
+            end_x = min(self.width, sprite_width // 2 + sprite_x)
 
             tex_width, tex_height = self.textures[sprite["image"]].shape
 
