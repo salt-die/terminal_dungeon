@@ -38,9 +38,9 @@ class Map:
     after first call to cast_sprites in the renderer).
     """
     def __init__(self, file_name):
-        self.load(file_name)
+        self._load(file_name)
 
-    def load(self, file_name):
+    def _load(self, file_name):
         with open(file_name + ".json", 'r') as file:
             map_dict = json.load(file)
             self.__map = np.array(map_dict["map"]).T
@@ -101,7 +101,7 @@ class Player:
         if not self.game_map[tuple(next_step.astype(int))]:
             self.pos = next_step
 
-        #Allows 'sliding' on walls
+        # Allows 'sliding' on walls
         elif not self.game_map[int(next_step[0])][int(self.pos[1])]:
             self.pos[0] = next_step[0]
         elif not self.game_map[int(self.pos[0])][int(next_step[1])]:
@@ -113,30 +113,29 @@ class Renderer:
     The Renderer class is responsible for everything drawn on the screen --
     including the environment, sprites, menus, items. All textures stored here.
     """
-    def __init__(self, screen, player, game_map, *textures):
-        #Settings======================================================
-        self.max_hops = 60 #How far rays are cast.
+    max_hops = 60  # How far rays are cast.
+    const = np.array([1, -1])
 
+    # Shading constants -- Modifying ascii_map should be safe.
+    ascii_map = np.array(list(' .,:;<+*LtCa4U80dQM@'))
+    shades = len(ascii_map) - 1
+    side_shade = (shades + 1) // 5
+    shade_dif = shades - side_shade
+
+    textures_on = True
+
+    def __init__(self, screen, player, game_map, *textures):
         self.screen = screen
         self.height, self.width = self.screen.getmaxyx()
+        self.hght_inv = np.array([0, 1 / self.height])
         self.floor_y = self.height // 2
         self.distances = [0] * self.width
+
         self.player = player
         self.game_map = game_map
-        self.load_textures(*textures)
-        self.textures_on = True
+        self._load_textures(*textures)
 
-        #So we have fewer arrays to initialize inside loops============
-        self.hght_inv = np.array([0, 1 / self.height])
-        self.const = np.array([1, -1])
-
-        #Shading Constants--It's safe to modify ascii_map==============
-        self.ascii_map = np.array(list(' .,:;<+*LtCa4U80dQM@'))
-        self.shades = len(self.ascii_map) - 1
-        self.side_shade = (self.shades + 1) // 5
-        self.shade_dif = self.shades - self.side_shade
-
-    def load_textures(self, *texture_names):
+    def _load_textures(self, *texture_names):
         self.textures = []
         for name in texture_names:
             with open(name + ".json", 'r') as texture:
