@@ -176,26 +176,25 @@ class Renderer:
         wall_dis =\
          (map_pos[side] - self.player.pos[side] + (1 - step[side]) / 2)\
          / ray_angle[side]
-        #Save distance for sprite calculations.
+        # Save distance for sprite calculations.
         self.distances[column] = wall_dis
 
         line_height = int(self.height / wall_dis) if wall_dis else self.height
         if line_height == 0:
-            return 0, 0, [] #Draw nothing
+            return 0, 0, []  # Draw nothing
 
-        line_end, line_start = np.clip(((self.const * line_height + self.height) / 2\
-                                         + self.player.z * line_height).astype(int),
-                                       0, self.height)
-        line_height = line_end - line_start #Correct off-by-one errors
+        line_start = max(0, int((-line_height + self.height) / 2 + self.player.z * line_height))
+        line_end = min(self.height, int((line_height + self.height) / 2 + self.player.z * line_height))
+        line_height = line_end - line_start  # Correct off-by-one errors
 
         #Shading
-        shade = line_height if line_height < self.shade_dif else self.shade_dif
-        shade += 0 if side else self.side_shade #One side is brighter
+        shade = min(line_height, self.shade_dif)
+        shade += 0 if side else self.side_shade  # One side is brighter
 
-        #A buffer to store shade values
+        # A buffer to store shade values
         shade_buffer = np.full(line_height, shade)
 
-        #Texturing
+        # Texturing
         if self.textures_on:
             tex_num = self.game_map[tuple(map_pos)] - 1
             texture_width, texture_height = self.textures[tex_num].shape
@@ -206,7 +205,7 @@ class Renderer:
             if -1**side * ray_angle[side] < 0:
                 tex_x = texture_width - tex_x - 1
 
-            #Add or subtract texture values to shade values
+            # Add or subtract texture values to shade values
             tex_ys = (np.arange(line_height) * texture_height / line_height).astype(int)
             shade_buffer += 2 * self.textures[tex_num][tex_x, tex_ys] - 12
             np.clip(shade_buffer, 1, self.shades, out=shade_buffer)
