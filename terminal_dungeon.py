@@ -58,22 +58,27 @@ class Player:
     player such as falling.
     """
     speed = .1
+
     rotate_speed = .05
+
+    # Jump implementation could use some improvement
     jump_time = 8
+    time_in_jump = 0
+    z = 0.0
+    is_jumping = False
+
     field_of_view = .6  # Somewhere between 0 and 1 is reasonable
 
     left = rotation_matrix(-rotate_speed)
     right = rotation_matrix(rotate_speed)
 
+    perp = np.array([[0., -1.],
+                     [1., 0.]])
+
     def __init__(self, game_map, pos=np.array([5., 5.]), initial_angle=0):
         self.game_map = game_map
         self.pos = pos
         self.cam = np.array([[1, 0], [0, self.field_of_view]]) @ rotation_matrix(initial_angle)
-        self.perp = np.array([[0., -1.],
-                              [1., 0.]])
-        self.time_in_jump = 0
-        self.z = 0.
-        self.is_jumping = False
 
     def update(self):
         # We'll have more to do here eventually.
