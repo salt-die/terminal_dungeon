@@ -150,7 +150,7 @@ class Renderer:
     def cast_ray(self, column):
         """
         Cast rays and draw columns whose heights correspond to the distance a ray traveled
-        before it hit a wall.
+        until it hit a wall.
 
         TODO: Pass a full numpy array of columns all at once.
         """
@@ -174,9 +174,7 @@ class Renderer:
             return float("inf"), side, map_pos, ray_angle
 
         # Avoiding euclidean distance, to avoid fish-eye effect.
-        wall_dis =\
-         (map_pos[side] - self.player.pos[side] + (1 - step[side]) / 2)\
-         / ray_angle[side]
+        wall_dis = (map_pos[side] - self.player.pos[side] + (1 - step[side]) / 2) / ray_angle[side]
         # Save distance for sprite calculations.
         self.distances[column] = wall_dis
 
