@@ -269,16 +269,11 @@ class Renderer:
                 if not (0 <= column <= self.width and trans_pos[1] <= self.distances[column]):
                     continue
 
-                vertical_buffer = [0] * (end_y - start_y)
-
-                for i in range(start_y, end_y):
-                    # From which row characters are taken
-                    tex_y = int((i + clip_y) * height_ratio)
-                    char = self.textures[sprite["image"]][tex_x, tex_y]
-                    vertical_buffer[i - start_y] = char\
-                        if char != "0" else self.buffer[i, column]
-
-                self.buffer[start_y:end_y, column] = vertical_buffer
+                y_range = np.arange(start_y, end_y)
+                tex_ys = np.clip((y_range + clip_y) * height_ratio, 0, None).astype(int)
+                self.buffer[start_y:end_y, column] = np.where(self.textures[sprite["image"]][tex_x, tex_ys] != "0",
+                                                              self.textures[sprite["image"]][tex_x, tex_ys],
+                                                              self.buffer[start_y:end_y, column])
 
     def update(self):
         # Clear buffer
@@ -371,7 +366,7 @@ def main(screen):
     player = Player(game_map)
     # We may mass load textures in the future and pass the list to renderer.
     renderer = Renderer(screen, player, game_map,
-                        "texture1", "texture2", "texture3")
+                        "texture1", "texture2", "dragon", "tree")
     controller = Controller(player, renderer)
     while controller.running:
         controller.update()
