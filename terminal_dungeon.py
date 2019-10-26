@@ -269,8 +269,7 @@ class Renderer:
                 if not (0 <= column <= self.width and trans_pos[1] <= self.distances[column]):
                     continue
 
-                y_range = np.arange(start_y, end_y)
-                tex_ys = np.clip((y_range + clip_y) * height_ratio, 0, None).astype(int)
+                tex_ys = np.clip((np.arange(start_y, end_y) + clip_y) * height_ratio, 0, None).astype(int)
                 self.buffer[start_y:end_y, column] = np.where(self.textures[sprite["image"]][tex_x, tex_ys] != "0",
                                                               self.textures[sprite["image"]][tex_x, tex_ys],
                                                               self.buffer[start_y:end_y, column])
@@ -316,7 +315,7 @@ class Controller():
     def user_input(self):
         if self.keys[Key.esc]:
             self.running = False
-            self.listener.stop()
+            return
         if self.keys[KeyCode(char='t')]:
             self.renderer.textures_on = not self.renderer.textures_on
             self.keys[KeyCode(char='t')] = False
@@ -326,6 +325,8 @@ class Controller():
         self.keys[key] = True
 
     def released(self, key):
+        if key == Key.esc:
+            return False
         self.keys[key] = False
 
     def movement(self):
@@ -356,9 +357,9 @@ class Controller():
             self.keys[Key.space] = False
 
     def update(self):
+        self.player.update()
         self.renderer.update()
         self.user_input()
-        self.player.update()
 
 def main(screen):
     init_curses(screen)
