@@ -29,6 +29,7 @@ def rotation_matrix(theta):
     return np.array([[np.cos(theta), np.sin(theta)],
                      [-np.sin(theta), np.cos(theta)]])
 
+
 class Map:
     """
     A helper class for easy loading of maps.
@@ -119,7 +120,7 @@ class Renderer:
     including the environment, sprites, menus, items. All textures stored here.
     """
     max_hops = 60  # How far rays are cast.
-    const = np.array([1, -1])
+    const = np.array([1, -1]) # A constant used in cast_ray; initialized here to save time.
 
     # Shading constants -- Modifying ascii_map should be safe.
     ascii_map = np.array(list(' .,:;<+*LtCa4U80dQM@'))
@@ -129,7 +130,7 @@ class Renderer:
 
     textures_on = True
 
-    def __init__(self, screen, player, game_map, *textures):
+    def __init__(self, screen, player, game_map, textures):
         self.screen = screen
         self.height, self.width = self.screen.getmaxyx()
         self.hght_inv = np.array([0, 1 / self.height])
@@ -138,11 +139,11 @@ class Renderer:
 
         self.player = player
         self.game_map = game_map
-        self._load_textures(*textures)
+        self._load_textures(textures)
 
-    def _load_textures(self, *texture_names):
+    def _load_textures(self, textures):
         self.textures = []
-        for name in texture_names:
+        for name in textures:
             with open(name + ".json", 'r') as texture:
                 pre_load = json.load(texture)
                 self.textures.append(np.array(pre_load).T)
@@ -187,14 +188,11 @@ class Renderer:
         line_end = min(self.height, int((line_height + self.height) / 2 + jump_height))
         line_height = line_end - line_start  # Correct off-by-one errors
 
-        # Shading
         shade = min(line_height, self.shade_dif)
         shade += 0 if side else self.side_shade  # One side is brighter
 
-        # A buffer to store shade values
         shade_buffer = np.full(line_height, shade)
 
-        # Texturing
         if self.textures_on:
             tex_num = self.game_map[tuple(map_pos)] - 1
             texture_width, texture_height = self.textures[tex_num].shape
@@ -239,7 +237,7 @@ class Renderer:
 
             # Sprite x-position on screen
             sprite_x = int(self.height * (1 + trans_pos[0] / trans_pos[1]) - 1)
-            # Sprite width and height
+
             sprite_height = int(self.height / trans_pos[1])
             sprite_width = int(self.width / trans_pos[1] / 2)
             if not all([sprite_height, sprite_width]):  # Sprite too small.
@@ -276,7 +274,7 @@ class Renderer:
 
     def update(self):
         # Clear buffer
-        self.buffer = np.full((self.height, self.width), " ", dtype=str)
+        self.buffer = np.full((self.height, self.width), " ")
 
         # Draw floor
         self.buffer[self.floor_y:, :] = self.ascii_map[1]
@@ -337,7 +335,6 @@ class Controller():
             self.jumping_keys = self.keys.copy()
             self.player_has_jumped = False
 
-        # Constants that make the following conditionals much more readable
         left = self.keys[Key.left] or self.keys[KeyCode(char='a')]
         right = self.keys[Key.right] or self.keys[KeyCode(char='d')]
         up = keys[Key.up] or keys[KeyCode(char='w')]
@@ -365,9 +362,8 @@ def main(screen):
     init_curses(screen)
     game_map = Map("map1")
     player = Player(game_map)
-    # We may mass load textures in the future and pass the list to renderer.
-    renderer = Renderer(screen, player, game_map,
-                        "texture1", "texture2", "dragon", "tree")
+    textures = ["texture1", "texture2", "dragon", "tree"]
+    renderer = Renderer(screen, player, game_map, textures)
     controller = Controller(player, renderer)
     while controller.running:
         controller.update()
