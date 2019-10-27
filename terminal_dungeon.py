@@ -164,7 +164,7 @@ class Renderer:
         map_pos = self.player.pos.astype(int)
         with np.errstate(divide="ignore"):
             delta = abs(1 / ray_angle)
-        step = 2 * np.heaviside(ray_angle, 1) - 1
+        step = 2 * np.heaviside(ray_angle, 1) - 1  # Same as np.sign except 0 is mapped to 1
         side_dis = step * (map_pos + (step + 1) / 2 - self.player.pos) * delta
 
         # Cast a ray until we hit a wall or hit max_range
@@ -174,8 +174,7 @@ class Renderer:
             map_pos[side] += step[side]
             if self.game_map[tuple(map_pos)]:
                 break
-        else:
-            # No walls in range
+        else:  # No walls in range
             self.distances[column] = float("inf")
             return 0, 0, []
 
