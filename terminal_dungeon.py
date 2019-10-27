@@ -362,6 +362,10 @@ class Controller():
             self.player.is_jumping = True
             self.keys[Key.space] = False
 
+    def start(self):
+        while self.running:
+            self.update()
+
     def update(self):
         self.player.update()
         if self.resized:
@@ -376,9 +380,7 @@ def main(screen):
     player = Player(game_map)
     textures = ["texture1", "texture2", "dragon", "tree"]
     renderer = Renderer(screen, player, game_map, textures)
-    controller = Controller(player, renderer)
-    while controller.running:
-        controller.update()
+    Controller(player, renderer).start()
     curses.flushinp()
     curses.endwin()
 
