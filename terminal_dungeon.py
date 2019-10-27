@@ -15,9 +15,11 @@ Values stored in textures should range from 0-9.  Values below 6 are
 subtractive and above 6 are additive.
 """
 from collections import defaultdict
-import json
-import numpy as np
 import curses
+import json
+import os
+import signal
+import numpy as np
 from pynput import keyboard
 from pynput.keyboard import Key, KeyCode
 
@@ -120,7 +122,6 @@ class Renderer:
     including the environment, sprites, menus, items. All textures stored here.
     """
     max_hops = 60  # How far rays are cast.
-    const = np.array([1, -1]) # A constant used in cast_ray; initialized here to save time.
 
     # Shading constants -- Modifying ascii_map should be safe.
     ascii_map = np.array(list(' .,:;<+*LtCa4U80dQM@'))
@@ -132,14 +133,18 @@ class Renderer:
 
     def __init__(self, screen, player, game_map, textures):
         self.screen = screen
-        self.height, self.width = self.screen.getmaxyx()
-        self.hght_inv = np.array([0, 1 / self.height])
-        self.floor_y = self.height // 2
-        self.distances = [0] * self.width
+        self.resize()
 
         self.player = player
         self.game_map = game_map
         self._load_textures(textures)
+
+    def resize(self):
+        self.width, self.height = os.get_terminal_size()
+        curses.resizeterm(self.height, self.width)
+        self.angle_increment = 1 / self.width
+        self.floor_y = self.height // 2
+        self.distances = [0] * self.width
 
     def _load_textures(self, textures):
         self.textures = []
@@ -155,7 +160,7 @@ class Renderer:
 
         TODO: Pass a full numpy array of columns all at once.
         """
-        ray_angle = self.player.cam.T @ (column * self.hght_inv + self.const)
+        ray_angle = self.player.cam.T @ np.array((1, 2 * column * self.angle_increment - 1))
         map_pos = self.player.pos.astype(int)
         with np.errstate(divide="ignore"):
             delta = abs(1 / ray_angle)
@@ -236,7 +241,7 @@ class Renderer:
                 continue
 
             # Sprite x-position on screen
-            sprite_x = int(self.height * (1 + trans_pos[0] / trans_pos[1]) - 1)
+            sprite_x = int(self.width / 2 * (1 + trans_pos[0] / trans_pos[1]))
 
             sprite_height = int(self.height / trans_pos[1])
             sprite_width = int(self.width / trans_pos[1] / 2)
@@ -302,13 +307,18 @@ class Controller():
     running = True
     keys = jumping_keys = defaultdict(bool)
     player_has_jumped = False
+    resized = False
 
     def __init__(self, player, renderer):
         self.player = player
         self.renderer = renderer
+        signal.signal(signal.SIGWINCH, self.resize)
         self.listener = keyboard.Listener(on_press=self.pressed,
                                           on_release=self.released)
         self.listener.start()
+
+    def resize(self, *args):
+        self.resized = True
 
     def user_input(self):
         if self.keys[Key.esc]:
@@ -355,6 +365,9 @@ class Controller():
 
     def update(self):
         self.player.update()
+        if self.resized:
+            self.renderer.resize()
+            self.resized = False
         self.renderer.update()
         self.user_input()
 
@@ -375,7 +388,6 @@ def init_curses(screen):
     curses.curs_set(0)
     curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
     screen.attron(curses.color_pair(1))
-    screen.clear()
 
 if __name__ == "__main__":
     curses.wrapper(main)
