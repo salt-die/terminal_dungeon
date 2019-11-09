@@ -93,9 +93,9 @@ class Player:
         if self.time_in_jump >= 2 * self.jump_time:
             self.is_jumping, self.time_in_jump, self.z = False, 0, 0.
             return
-        self.z +=\
-         (self.jump_time - self.time_in_jump)**2 / (10 * self.jump_time**2)\
-          * (1 if self.time_in_jump < self.jump_time else -1)
+        self.z +=((  self.jump_time - self.time_in_jump)**2
+                   / (10 * self.jump_time**2)
+                   * (1 if self.time_in_jump < self.jump_time else -1))
         self.time_in_jump += 1
 
     def turn(self, left=True):
