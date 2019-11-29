@@ -367,11 +367,13 @@ class Controller():
 
 def main(screen):
     init_curses(screen)
+
     game_map = Map("map1")
     player = Player(game_map)
     textures = ["wall1", "wall2", "dragon", "tree"]
-    renderer = Renderer(screen, player, textures)
-    Controller(renderer).start()
+
+    Controller(Renderer(screen, player, textures)).start()
+
     curses.flushinp()
     curses.endwin()
 
