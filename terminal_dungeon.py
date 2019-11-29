@@ -217,16 +217,13 @@ class Renderer:
         self.buffer[line_start:line_end, column] = self.ascii_map[shade_buffer]
 
     def cast_sprites(self):
-        # For each sprite, calculate distance (squared) to player
-        sprite_distances = {}
-        for i, sprite in enumerate(self.game_map.sprites):
+        for sprite in self.game_map.sprites:
             # Relative position of sprite to player
             sprite["relative"] = self.player.pos - sprite["pos"]
-            sprite_distances[i] = sprite["relative"] @ sprite["relative"]
 
-        # Sprites sorted by distance from player.
-        sorted_sprites = sorted(sprite_distances, key=sprite_distances.get, reverse=True)
-        sorted_sprites = [self.game_map.sprites[i] for i in sorted_sprites]
+        # Sprites sorted by distance (squared) from player.
+        sorted_sprites = sorted(self.game_map.sprites,
+                                key=lambda s:s["relative"] @ s["relative"], reverse=True)
 
         # Camera Inverse used to calculate transformed position of sprites.
         cam_inv = np.linalg.inv(-self.player.cam[::-1])
@@ -244,7 +241,7 @@ class Renderer:
 
             sprite_height = int(self.height / trans_pos[1])
             sprite_width = int(self.width / trans_pos[1] / 2)
-            if not all([sprite_height, sprite_width]):  # Sprite too small.
+            if sprite_height == 0 or sprite_width == 0:  # Sprite too small.
                 continue
 
             jump_height = self.player.z * sprite_height
