@@ -62,7 +62,7 @@ class Player:
     """
     speed = .1
 
-    rotate_speed = .05
+    rotate_speed = .07
 
     # Jump implementation could use some improvement
     jump_time = 8
@@ -75,8 +75,7 @@ class Player:
     left = rotation_matrix(-rotate_speed)
     right = rotation_matrix(rotate_speed)
 
-    perp = np.array([[0., -1.],
-                     [1., 0.]])
+    perp = rotation_matrix(3 * np.pi / 2)
 
     def __init__(self, game_map, pos=np.array([5., 5.]), initial_angle=0):
         self.game_map = game_map
@@ -121,7 +120,7 @@ class Renderer:
     The Renderer class is responsible for everything drawn on the screen --
     including the environment, sprites, menus, items. All textures stored here.
     """
-    max_hops = 60  # How far rays are cast.
+    max_hops = 20  # How far rays are cast.
 
     # Shading constants -- Modifying ascii_map should be safe.
     ascii_map = np.array(list(' .,:;<+*LtCa4U80dQM@'))
