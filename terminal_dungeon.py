@@ -131,12 +131,12 @@ class Renderer:
 
     textures_on = True
 
-    def __init__(self, screen, player, game_map, textures):
+    def __init__(self, screen, player, textures):
         self.screen = screen
         self.resize()
 
         self.player = player
-        self.game_map = game_map
+        self.game_map = player.game_map
         self._load_textures(textures)
 
     def resize(self):
@@ -299,8 +299,8 @@ class Controller():
     player_has_jumped = False
     resized = False
 
-    def __init__(self, player, renderer):
-        self.player = player
+    def __init__(self, renderer):
+        self.player = renderer.player
         self.renderer = renderer
         signal.signal(signal.SIGWINCH, self.resize) # Our solution to curses resize bug
         self.listener = keyboard.Listener(on_press=self.pressed,
@@ -369,9 +369,9 @@ def main(screen):
     init_curses(screen)
     game_map = Map("map1")
     player = Player(game_map)
-    textures = ["texture1", "texture2", "dragon", "tree"]
-    renderer = Renderer(screen, player, game_map, textures)
-    Controller(player, renderer).start()
+    textures = ["wall1", "wall2", "dragon", "tree"]
+    renderer = Renderer(screen, player, textures)
+    Controller(renderer).start()
     curses.flushinp()
     curses.endwin()
 
