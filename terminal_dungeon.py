@@ -228,8 +228,7 @@ class Renderer:
         # Camera Inverse used to calculate transformed position of sprites.
         cam_inv = np.linalg.inv(-self.player.cam[::-1])
 
-        # Draw each sprite from furthest to closest.
-        for sprite in sorted_sprites:
+        for sprite in sorted_sprites: # Draw each sprite from furthest to closest.
             # Transformed position of sprites due to camera's plane and angle
             trans_pos = sprite["relative"] @ cam_inv
 
@@ -274,20 +273,15 @@ class Renderer:
                                                               self.buffer[start_y:end_y, column])
 
     def update(self):
-        # Clear buffer
-        self.buffer = np.full((self.height, self.width), " ")
+        self.buffer = np.full((self.height, self.width), " ") # Clear buffer
 
-        # Draw floor
-        self.buffer[self.floor_y:, :] = self.ascii_map[1]
+        self.buffer[self.floor_y:, :] = self.ascii_map[1] # Draw floor
 
-        # Draw walls
-        for column in range(self.width - 1):
+        for column in range(self.width - 1): # Draw walls
             self.cast_ray(column)
 
-        # Draw sprites
         self.cast_sprites()
 
-        # Push buffer to screen
         self.render()
 
     def render(self):
@@ -308,7 +302,7 @@ class Controller():
     def __init__(self, player, renderer):
         self.player = player
         self.renderer = renderer
-        signal.signal(signal.SIGWINCH, self.resize)
+        signal.signal(signal.SIGWINCH, self.resize) # Our solution to curses resize bug
         self.listener = keyboard.Listener(on_press=self.pressed,
                                           on_release=self.released)
         self.listener.start()
@@ -382,7 +376,6 @@ def main(screen):
     curses.endwin()
 
 def init_curses(screen):
-    curses.noecho()
     curses.curs_set(0)
     curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
     screen.attron(curses.color_pair(1))
