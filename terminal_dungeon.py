@@ -202,7 +202,7 @@ class Renderer:
 
             wall_x = (self.player.pos[1 - side] + wall_dis * ray_angle[1 - side]) % 1
             tex_x = int(wall_x * texture_width)
-            if -1**side * ray_angle[side] < 0:
+            if (-1)**side * ray_angle[side] < 0:
                 tex_x = texture_width - tex_x - 1
 
             tex_ys = (np.arange(line_height) * (texture_height / line_height)).astype(int)
