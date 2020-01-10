@@ -46,13 +46,13 @@ class Map:
     def _load(self, file_name):
         with open(file_name + ".json", 'r') as file:
             map_dict = json.load(file)
-            self.__map = np.array(map_dict["map"]).T
+            self._map = np.array(map_dict["map"]).T
             self.sprites = map_dict["sprites"]
         for sprite in self.sprites: #lists --> numpy arrays
             sprite["pos"] = np.array(sprite["pos"])
 
     def __getitem__(self, key):
-        return self.__map[key]
+        return self._map[key]
 
 
 class Player:
@@ -130,12 +130,16 @@ class Renderer:
 
     textures_on = True
 
+    minimap_width = 3
+    pad = 50
+
     def __init__(self, screen, player, textures):
         self.screen = screen
         self.resize()
 
         self.player = player
         self.game_map = player.game_map
+        self.mini_map = np.pad(np.where(self.game_map._map.T, '#', ' '), self.pad, constant_values=' ')
         self._load_textures(textures)
 
     def resize(self):
@@ -239,7 +243,7 @@ class Renderer:
 
             sprite_height = int(self.height / trans_pos[1])
             sprite_width = int(self.width / trans_pos[1] / 2)
-            if sprite_height == 0 or sprite_width == 0:  # Sprite too small.
+            if not (sprite_height and sprite_width):  # Sprite too small.
                 continue
 
             jump_height = self.player.z * sprite_height
@@ -271,6 +275,21 @@ class Renderer:
                                                               self.textures[sprite["image"]][tex_x, tex_ys],
                                                               self.buffer[start_y:end_y, column])
 
+    def draw_minimap(self):
+        pad = self.pad
+        width = self.minimap_width
+
+        start_col = 2 * (self.width // width) - 2
+        start_row = 2 * (self.height // width) - 1
+        x, y = self.player.pos.astype(int) + pad
+        half_w = self.width // width // 2
+        half_h = self.height // width // 2
+
+        self.buffer[start_row: start_row + 2 * half_h,
+                    start_col: start_col + 2 * half_w] = self.mini_map[y - half_h: y + half_h,
+                                                                       x - half_w: x + half_w]
+        self.buffer[start_row + half_h, start_col + half_w] = '@'
+
     def update(self):
         self.buffer = np.full((self.height, self.width), " ") # Clear buffer
 
@@ -280,6 +299,8 @@ class Renderer:
             self.cast_ray(column)
 
         self.cast_sprites()
+
+        self.draw_minimap()
 
         self.render()
 
