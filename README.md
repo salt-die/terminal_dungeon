@@ -4,6 +4,12 @@ Now with Sprites!:
 
 ![Terminal Dungeon Sprite Preview](sprite2.gif)
 
+This engine was used to power a maze solving robot during Advent of Code 2019:
+
+![Maze Solver](https://github.com/salt-die/Advent-of-Code/blob/master/maze_solver_2.gif)
+
+(see code here: [AoC Raycaster](https://github.com/salt-die/Advent-of-Code/tree/master/raycaster))
+
 # Terminal Dungeon
 
 A Doom-like game engine that renders to ascii and outputs to terminal!
