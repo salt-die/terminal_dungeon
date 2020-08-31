@@ -2,6 +2,7 @@ import os
 import json
 import curses
 import numpy as np
+from pathlib import Path
 
 class Renderer:
     """
@@ -21,28 +22,39 @@ class Renderer:
     minimap_width = 3
     pad = 50
 
-    def __init__(self, screen, player, textures):
+    def __init__(self, screen, player, wall_textures, sprite_textures):
         self.screen = screen
         self.resize()
 
         self.player = player
         self.game_map = player.game_map
         self.mini_map = np.pad(np.where(self.game_map._map.T, '#', ' '), self.pad, constant_values=' ')
-        self._load_textures(textures)
+        self._load_textures(wall_textures, sprite_textures)
 
     def resize(self):
-        self.width, self.height = os.get_terminal_size()
-        curses.resizeterm(self.height, self.width)
+        try: # linux
+            self.width, self.height = os.get_terminal_size()
+            curses.resizeterm(self.height, self.width)
+        except: # windows
+            self.height, self.width = self.screen.getmaxyx()
+            os.system(f"mode con cols={self.width} lines={self.height}")
         self.angle_increment = 1 / self.width
         self.floor_y = self.height // 2
         self.distances = [0] * self.width
 
-    def _load_textures(self, textures):
-        self.textures = []
-        for name in textures:
-            with open(name + ".json", 'r') as texture:
-                pre_load = json.load(texture)
-                self.textures.append(np.array(pre_load).T)
+    def _load_textures(self, wall_textures, sprite_textures):
+        self.textures = tex = []  # We may store the different texture types in different lists in the future.
+        for name in wall_textures:
+            filename = str(Path("wall_textures", name + ".txt"))
+            with open(filename, "r") as file:
+                tmp = file.read()
+            tex.append(np.array([list(map(int, line)) for line in tmp.splitlines()]).T)
+
+        for name in sprite_textures:
+            filename = str(Path("sprite_textures", name + ".txt"))
+            with open(filename, "r") as file:
+                tmp = file.read()
+            tex.append(np.array([list(line) for line in tmp.splitlines()]).T)
 
     def cast_ray(self, column):
         """

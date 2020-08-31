@@ -1,5 +1,6 @@
 import json
 import numpy as np
+from pathlib import Path
 
 class Map:
     """
@@ -9,15 +10,21 @@ class Map:
     sprite image number, and relative position to player (which will be set
     after first call to cast_sprites in the renderer).
     """
-    def __init__(self, file_name):
-        self._load(file_name)
+    def __init__(self, map_name):
+        self._load(map_name)
 
-    def _load(self, file_name):
-        with open(file_name + ".json", 'r') as file:
-            map_dict = json.load(file)
-            self._map = np.array(map_dict["map"]).T
-            self.sprites = map_dict["sprites"]
-        for sprite in self.sprites: #lists --> numpy arrays
+    def _load(self, map_name):
+        map_filename = str(Path("maps", map_name + ".txt"))
+        sprites_filename = str(Path("maps", map_name + ".sprites"))
+        
+        with open(map_filename, "r") as file:
+            tmp = file.read()
+        self._map = np.array([[int(c) for c in line] for line in tmp.splitlines()]).T
+        
+        with open(sprites_filename, "r") as file:
+            self.sprites = json.load(file)
+        
+        for sprite in self.sprites: # lists --> numpy arrays
             sprite["pos"] = np.array(sprite["pos"])
 
     def __getitem__(self, key):

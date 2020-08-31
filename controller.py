@@ -1,5 +1,6 @@
 from collections import defaultdict
 import signal
+import curses
 from pynput import keyboard
 from pynput.keyboard import Key, KeyCode
 
@@ -15,7 +16,10 @@ class Controller():
     def __init__(self, renderer):
         self.player = renderer.player
         self.renderer = renderer
-        signal.signal(signal.SIGWINCH, self.resize) # Our solution to curses resize bug
+        try: # Fails on windows
+            signal.signal(signal.SIGWINCH, self.resize) # Our solution to curses resize bug
+        except:
+            pass
         self.listener = keyboard.Listener(on_press=self.pressed,
                                           on_release=self.released)
         self.listener.start()
@@ -72,7 +76,7 @@ class Controller():
 
     def update(self):
         self.player.update()
-        if self.resized:
+        if self.resized or self.renderer.screen.getch() == curses.KEY_RESIZE: # 2nd check for windows
             self.renderer.resize()
             self.resized = False
         self.renderer.update()

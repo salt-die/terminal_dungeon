@@ -26,9 +26,10 @@ def main(screen):
 
     game_map = Map("map1")
     player = Player(game_map)
-    textures = ["wall1", "wall2", "dragon", "tree"]
+    wall_textures = "wall1", "wall2"
+    sprite_textures = "dragon", "tree"
 
-    Controller(Renderer(screen, player, textures)).start()
+    Controller(Renderer(screen, player, wall_textures, sprite_textures)).start()
 
     curses.flushinp()
     curses.endwin()
@@ -37,6 +38,7 @@ def init_curses(screen):
     curses.curs_set(0)
     curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
     screen.attron(curses.color_pair(1))
+    screen.nodelay(True)
 
 if __name__ == "__main__":
     curses.wrapper(main)
