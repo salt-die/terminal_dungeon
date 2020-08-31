@@ -19,7 +19,7 @@ class Map:
         
         with open(map_filename, "r") as file:
             tmp = file.read()
-        self._map = np.array([list(map(int, line) for line in tmp.splitlines()]).T
+        self._map = np.array([list(map(int, line)) for line in tmp.splitlines()]).T
         
         with open(sprites_filename, "r") as file:
             self.sprites = json.load(file)
