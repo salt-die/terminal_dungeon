@@ -14,8 +14,8 @@ class Map:
         self._load(map_name)
 
     def _load(self, map_name):
-        map_filename = str(Path("maps", map_name + ".txt"))
-        sprites_filename = str(Path("maps", map_name + ".sprites"))
+        map_filename = str(Path("terminal_dungeon", "maps", map_name + ".txt"))
+        sprites_filename = str(Path("terminal_dungeon", "maps", map_name + ".sprites"))
         
         with open(map_filename, "r") as file:
             tmp = file.read()

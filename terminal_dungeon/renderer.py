@@ -45,13 +45,13 @@ class Renderer:
     def _load_textures(self, wall_textures, sprite_textures):
         self.textures = tex = []  # We may store the different texture types in different lists in the future.
         for name in wall_textures:
-            filename = str(Path("wall_textures", name + ".txt"))
+            filename = str(Path("terminal_dungeon", "wall_textures", name + ".txt"))
             with open(filename, "r") as file:
                 tmp = file.read()
             tex.append(np.array([list(map(int, line)) for line in tmp.splitlines()]).T)
 
         for name in sprite_textures:
-            filename = str(Path("sprite_textures", name + ".txt"))
+            filename = str(Path("terminal_dungeon", "sprite_textures", name + ".txt"))
             with open(filename, "r") as file:
                 tmp = file.read()
             tex.append(np.array([list(line) for line in tmp.splitlines()]).T)
