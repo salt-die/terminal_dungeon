@@ -1,2 +1,3 @@
 numpy
 pynput
+windows-curses; sys_platform=='Windows'

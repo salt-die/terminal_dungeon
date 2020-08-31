@@ -12,7 +12,7 @@ This engine was used to power a maze solving robot during Advent of Code 2019:
 
 # Terminal Dungeon
 
-A Doom-like game engine that renders to ascii and outputs to terminal!
+A Doom-like game engine that renders to ascii and outputs to terminal! From `/terminal_dungeon/` root directory type `python -m terminal_dungeon` to play.
 
 
 * **'esc'** to exit
