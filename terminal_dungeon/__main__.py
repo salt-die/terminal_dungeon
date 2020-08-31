@@ -16,10 +16,10 @@ subtractive and above 6 are additive.
 """
 
 import curses
-from maps import Map
-from player import Player
-from renderer import Renderer
-from controller import Controller
+from .maps import Map
+from .player import Player
+from .renderer import Renderer
+from .controller import Controller
 
 def main(screen):
     init_curses(screen)
