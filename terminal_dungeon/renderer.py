@@ -71,11 +71,11 @@ class Renderer:
         side_dis = step * (map_pos + (step + 1) / 2 - self.player.pos) * delta
 
         # Cast a ray until we hit a wall or hit max_range
-        for hops in range(self.max_hops):
+        for _ in range(self.max_hops):
             side = 0 if side_dis[0] < side_dis[1] else 1
             side_dis[side] += delta[side]
             map_pos[side] += step[side]
-            if self.game_map[tuple(map_pos)]:
+            if self.game_map[map_pos]:
                 break
         else:  # No walls in range
             self.distances[column] = float("inf")
@@ -101,7 +101,7 @@ class Renderer:
         shade_buffer = np.full(line_height, shade)
 
         if self.textures_on:
-            tex_num = self.game_map[tuple(map_pos)] - 1
+            tex_num = self.game_map[map_pos] - 1
             texture_width, texture_height = self.textures[tex_num].shape
 
             wall_x = (self.player.pos[1 - side] + wall_dis * ray_angle[1 - side]) % 1

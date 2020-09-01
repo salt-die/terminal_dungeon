@@ -1,25 +1,66 @@
-from collections import defaultdict
 import signal
 import curses
 from pynput import keyboard
 from pynput.keyboard import Key, KeyCode
+
+
+# Key Bindings
+JUMP = Key.space
+TOGGLE_TEXTURE = KeyCode(char='t')
+QUIT = Key.esc
+FORWARD_1 = Key.up
+FORWARD_2 = KeyCode(char='w')
+BACKWARD_1 = Key.down
+BACKWARD_2 = KeyCode(char='s')
+LEFT_1 = Key.left
+LEFT_2 = KeyCode(char='a')
+RIGHT_1 = Key.right
+RIGHT_2 = KeyCode(char='d')
+STRAFE_LEFT = KeyCode(char='q')
+STRAFE_RIGHT = KeyCode(char='e')
+
+
+class KeyDict(dict):
+    """Dictionary that ignores certain movement inputs when player is jumping."""
+    _ignored_inputs = {FORWARD_1, FORWARD_2, BACKWARD_1, BACKWARD_2, STRAFE_LEFT, STRAFE_RIGHT}
+
+    def __init__(self, player):
+        self._player = player
+        self._jump_keys = dict.fromkeys(self._ignored_inputs, False)
+        super().__init__()
+
+    def __getitem__(self, key):
+        if self._player.is_jumping and key in self._jump_keys:
+            return self._jump_keys[key]
+        return super().__getitem__(key)
+
+    def __setitem__(self, key, value):
+        if not self._player.is_jumping and key == JUMP:
+            self._jump_keys = {key: self[key] for key in self._ignored_inputs}  # "Freeze" movement while jumping
+        super().__setitem__(key, value)
+
+    def __missing__(self, key):
+        self[key] = False
+        return False
+
 
 class Controller():
     """
     Controller class handles user input and updates all other objects.
     """
     running = True
-    keys = jumping_keys = defaultdict(bool)
-    player_has_jumped = False
     resized = False
 
     def __init__(self, renderer):
-        self.player = renderer.player
         self.renderer = renderer
+        self.player = renderer.player
+        self.keys = KeyDict(self.player)
+
         try: # Fails on windows
             signal.signal(signal.SIGWINCH, self.resize) # Our solution to curses resize bug
         except:
             pass
+
         self.listener = keyboard.Listener(on_press=self.pressed,
                                           on_release=self.released)
         self.listener.start()
@@ -28,36 +69,30 @@ class Controller():
         self.resized = True
 
     def user_input(self):
-        if self.keys[Key.esc]:
+        if self.keys[QUIT]:
             self.running = False
             return
-        if self.keys[KeyCode(char='t')]:
+        if self.keys[TOGGLE_TEXTURE]:
             self.renderer.textures_on = not self.renderer.textures_on
-            self.keys[KeyCode(char='t')] = False
+            self.keys[TOGGLE_TEXTURE] = False
         self.movement()
 
     def pressed(self, key):
         self.keys[key] = True
 
     def released(self, key):
-        if key == Key.esc:
-            return False
         self.keys[key] = False
+        return key != QUIT
 
     def movement(self):
-        # We stop accepting move inputs (but turning is ok) in the middle of a
-        # jump -- the effect is momentum-like movement while in the air.
-        keys = self.jumping_keys if self.player.is_jumping else self.keys
-        if self.player_has_jumped:
-            self.jumping_keys = self.keys.copy()
-            self.player_has_jumped = False
+        keys = self.keys
 
-        left = self.keys[Key.left] or self.keys[KeyCode(char='a')]
-        right = self.keys[Key.right] or self.keys[KeyCode(char='d')]
-        up = keys[Key.up] or keys[KeyCode(char='w')]
-        down = keys[Key.down] or keys[KeyCode(char='s')]
-        strafe_l = keys[KeyCode(char='q')]
-        strafe_r = keys[KeyCode(char='e')]
+        left = keys[LEFT_1] or keys[LEFT_2]
+        right = keys[RIGHT_1] or keys[RIGHT_2]
+        up = keys[FORWARD_1] or keys[FORWARD_2]
+        down = keys[BACKWARD_1] or keys[BACKWARD_2]
+        strafe_l = keys[STRAFE_LEFT]
+        strafe_r = keys[STRAFE_RIGHT]
 
         if left ^ right:
             self.player.turn(left)
@@ -65,10 +100,9 @@ class Controller():
             self.player.move((up - down) * self.player.speed)
         if strafe_l ^ strafe_r:
             self.player.move((strafe_l - strafe_r) * self.player.speed, True)
-        if self.keys[Key.space]:
-            self.player_has_jumped = True
+        if self.keys[JUMP]:
             self.player.is_jumping = True
-            self.keys[Key.space] = False
+            self.keys[JUMP] = False
 
     def start(self):
         while self.running:

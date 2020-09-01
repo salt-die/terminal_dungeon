@@ -41,12 +41,14 @@ class Player:
     def fall(self):
         if not self.is_jumping:
             return
+
         if self.time_in_jump >= 2 * self.jump_time:
             self.is_jumping, self.time_in_jump, self.z = False, 0, 0.
             return
-        self.z +=((  self.jump_time - self.time_in_jump)**2
-                   / (10 * self.jump_time**2)
-                   * (1 if self.time_in_jump < self.jump_time else -1))
+
+        # Increase our height quadratically for the first half of the jump and decrease it for the second half.
+        # This is a sloppy implementation.
+        self.z += ((self.jump_time - self.time_in_jump)**2 / (10 * self.jump_time**2) * (1 if self.time_in_jump < self.jump_time else -1))
         self.time_in_jump += 1
 
     def turn(self, left=True):
@@ -57,11 +59,11 @@ class Player:
                     (self.cam[0] @ self.perp if strafe else self.cam[0])
 
         # If we can move both coordinates at once, we should
-        if not self.game_map[tuple(next_step.astype(int))]:
+        if not self.game_map[next_step]:
             self.pos = next_step
 
         # Allows 'sliding' on walls
-        elif not self.game_map[int(next_step[0])][int(self.pos[1])]:
+        elif not self.game_map[next_step[0], self.pos[1]]:
             self.pos[0] = next_step[0]
-        elif not self.game_map[int(self.pos[0])][int(next_step[1])]:
+        elif not self.game_map[self.pos[0], next_step[1]]:
             self.pos[1] = next_step[1]
