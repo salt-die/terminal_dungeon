@@ -1,18 +1,14 @@
-![Terminal Dungeon Preview 3](preview3.gif)
+# Terminal Dungeon
 
-Now with Sprites!:
+A Doom-like game engine that renders to ascii and outputs to terminal! From `/terminal_dungeon/` root directory type `python -m terminal_dungeon` to play.
 
-![Terminal Dungeon Sprite Preview](sprite2.gif)
+![Terminal Dungeon Preview](preview.gif)
 
 This engine was used to power a maze solving robot during Advent of Code 2019:
 
 ![Maze Solver](https://github.com/salt-die/Advent-of-Code/blob/master/maze_solver_2.gif)
 
 (see code here: [AoC Raycaster](https://github.com/salt-die/Advent-of-Code/tree/master/raycaster))
-
-# Terminal Dungeon
-
-A Doom-like game engine that renders to ascii and outputs to terminal! From `/terminal_dungeon/` root directory type `python -m terminal_dungeon` to play.
 
 
 * **'esc'** to exit
