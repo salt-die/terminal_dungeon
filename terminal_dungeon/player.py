@@ -34,7 +34,7 @@ class Player:
 
         # generate z sequence for jumping
         t = np.arange(self.jump_time + 1)
-        self.zs = t * (self.jump_time - t) / (self.jump_time**2)
+        self.zs = t * (self.jump_time - t) / self.jump_time**2
 
     def jump(self):
         if self.is_jumping:
