@@ -16,11 +16,9 @@ class Player:
 
     rotate_speed = .07
 
-    # Jump implementation could use some improvement
     jump_time = 8
-    time_in_jump = 0
-    z = 0.0
     is_jumping = False
+    z = 0.0
 
     field_of_view = .6  # Somewhere between 0 and 1 is reasonable
 
@@ -34,22 +32,33 @@ class Player:
         self.pos = pos
         self.cam = np.array([[1, 0], [0, self.field_of_view]]) @ rotation_matrix(initial_angle)
 
+        # generate z sequence for jumping
+        t = np.arange(self.jump_time + 1)
+        self.zs = t * (self.jump_time - t) / (self.jump_time**2)
+
+    def jump(self):
+        if self.is_jumping:
+            return
+
+        self.is_jumping = True
+        self.iter_z = self.z_gen()
+
+    def z_gen(self):
+        """
+        Set each z value in self.zs to self.z consecutively,
+        then set self.is_jumping to False.
+        """
+        for z in self.zs:
+            self.z = z
+            yield
+
+        self.is_jumping = False
+        yield
+
     def update(self):
-        # We'll have more to do here eventually.
-        self.fall()
-
-    def fall(self):
-        if not self.is_jumping:
-            return
-
-        if self.time_in_jump >= 2 * self.jump_time:
-            self.is_jumping, self.time_in_jump, self.z = False, 0, 0.
-            return
-
-        # Increase our height quadratically for the first half of the jump and decrease it for the second half.
-        # This is a sloppy implementation.
-        self.z += ((self.jump_time - self.time_in_jump)**2 / (10 * self.jump_time**2) * (1 if self.time_in_jump < self.jump_time else -1))
-        self.time_in_jump += 1
+        # We'll have more to do here eventually, e.g., decrement timers on power-ups.
+        if self.is_jumping:
+            next(self.iter_z)
 
     def turn(self, left=True):
         self.cam = self.cam @ (self.left if left else self.right)

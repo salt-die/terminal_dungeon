@@ -91,8 +91,8 @@ class Renderer:
             return 0, 0, []  # Draw nothing
 
         jump_height = self.player.z * line_height
-        line_start = max(0, int((-line_height + self.height) / 2 + jump_height))
-        line_end = min(self.height, int((line_height + self.height) / 2 + jump_height))
+        line_start = max(0, int((self.height - line_height) / 2 + jump_height))
+        line_end = min(self.height, int((self.height + line_height) / 2 + jump_height))
         line_height = line_end - line_start  # Correct off-by-one errors
 
         shade = min(line_height, self.shade_dif)

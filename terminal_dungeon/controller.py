@@ -101,7 +101,7 @@ class Controller():
         if strafe_l ^ strafe_r:
             self.player.move((strafe_l - strafe_r) * self.player.speed, True)
         if self.keys[JUMP]:
-            self.player.is_jumping = True
+            self.player.jump()
             self.keys[JUMP] = False
 
     def start(self):
