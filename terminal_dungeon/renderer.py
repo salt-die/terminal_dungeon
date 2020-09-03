@@ -1,7 +1,7 @@
 import os
-import json
 import curses
 import numpy as np
+from math import ceil, floor
 from pathlib import Path
 
 class Renderer:
@@ -79,7 +79,7 @@ class Renderer:
                 break
         else:  # No walls in range
             self.distances[column] = float("inf")
-            return 0, 0, []
+            return
 
         # Avoiding euclidean distance, to avoid fish-eye effect.
         wall_dis = (map_pos[side] - self.player.pos[side] + (1 - step[side]) / 2) / ray_angle[side]
@@ -88,17 +88,17 @@ class Renderer:
 
         line_height = int(self.height / wall_dis) if wall_dis else self.height
         if line_height == 0:
-            return 0, 0, []  # Draw nothing
+            return  # Draw nothing
 
         jump_height = self.player.z * line_height
         line_start = max(0, int((self.height - line_height) / 2 + jump_height))
         line_end = min(self.height, int((self.height + line_height) / 2 + jump_height))
-        line_height = line_end - line_start  # Correct off-by-one errors
+        drawn_height = line_end - line_start
 
-        shade = min(line_height, self.shade_dif)
+        shade = min(drawn_height, self.shade_dif)
         shade += 0 if side else self.side_shade  # One side is brighter
 
-        shade_buffer = np.full(line_height, shade)
+        shade_buffer = np.full(drawn_height, shade)
 
         if self.textures_on:
             tex_num = self.game_map[map_pos] - 1
@@ -109,7 +109,9 @@ class Renderer:
             if (-1)**side * ray_angle[side] < 0:
                 tex_x = texture_width - tex_x - 1
 
-            tex_ys = (np.arange(line_height) * (texture_height / line_height)).astype(int)
+            offset = (line_height - (line_end - line_start)) / 2
+            ys = np.arange(drawn_height) + offset
+            tex_ys = (ys * texture_height / line_height).astype(int)
             # Add or subtract texture values to shade values
             # Note 2 * n - 12 is 0 for n = 6, i.e., values above 6 are additive and
             # below 6 are subtractive. For larger ascii maps, one may want to use linear
@@ -147,8 +149,8 @@ class Renderer:
                 continue
 
             jump_height = self.player.z * sprite_height
-            start_y = max(0, int((-sprite_height + self.height) / 2 + jump_height))
-            end_y = min(self.height, int((sprite_height + self.height) / 2 + jump_height))
+            start_y = max(0, int((self.height - sprite_height) / 2 + jump_height))
+            end_y = min(self.height, int((self.height + sprite_height) / 2 + jump_height))
 
             start_x = max(0, -sprite_width // 2 + sprite_x)
             end_x = min(self.width, sprite_width // 2 + sprite_x)
@@ -157,7 +159,7 @@ class Renderer:
 
             # Calculate some constants outside the next loops:
             clip_x = sprite_x - sprite_width / 2
-            clip_y = (sprite_height - self.height) / 2 - self.player.z * sprite_height
+            clip_y = (sprite_height - self.height) / 2 - jump_height
             width_ratio = tex_width / sprite_width
             height_ratio = tex_height / sprite_height
 
