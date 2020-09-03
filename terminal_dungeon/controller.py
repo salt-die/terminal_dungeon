@@ -30,14 +30,12 @@ class KeyDict(dict):
         super().__init__()
 
     def __getitem__(self, key):
-        if self._player.is_jumping and key in self._jump_keys:
+        if self._player.is_jumping and key in self._ignored_inputs:
             return self._jump_keys[key]
         return super().__getitem__(key)
 
-    def __setitem__(self, key, value):
-        if not self._player.is_jumping and key == JUMP:
-            self._jump_keys = {key: self[key] for key in self._ignored_inputs}  # "Freeze" movement while jumping
-        super().__setitem__(key, value)
+    def freeze(self):
+        self._jump_keys = {key: super(KeyDict, self).__getitem__(key) for key in self._ignored_inputs}
 
     def __missing__(self, key):
         self[key] = False
@@ -100,9 +98,8 @@ class Controller():
             self.player.move((up - down) * self.player.speed)
         if strafe_l ^ strafe_r:
             self.player.move((strafe_l - strafe_r) * self.player.speed, True)
-        if self.keys[JUMP]:
-            self.player.jump()
-            self.keys[JUMP] = False
+        if self.keys[JUMP] and self.player.jump():
+            self.keys.freeze()
 
     def start(self):
         while self.running:

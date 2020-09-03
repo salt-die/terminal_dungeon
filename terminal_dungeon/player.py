@@ -38,11 +38,13 @@ class Player:
         self.zs = 2 * t * (self.jump_time - t) / self.jump_time**2
 
     def jump(self):
+        # Return True if a starting a new jump.
         if self.is_jumping:
-            return
+            return False
 
         self.is_jumping = True
         self.iter_z = self.z_gen()
+        return True
 
     def z_gen(self):
         """
