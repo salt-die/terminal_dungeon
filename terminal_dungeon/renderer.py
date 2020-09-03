@@ -191,15 +191,15 @@ class Renderer:
 
         x, y = self.player.pos.astype(int) + pad
 
-        self.buffer[-height - y_offset: -y_offset,
-                    -width - x_offset: -x_offset] = self.mini_map[y - hh: y + hh,
-                                                          x - hw: x + hw]
-        self.buffer[start_row + hh, start_col + hw] = '@'
+        r = -height - y_offset
+        c = -width - x_offset
+        self.buffer[r: -y_offset, c: -x_offset] = self.mini_map[y - hh: y + hh, x - hw: x + hw]
+        self.buffer[r + hh, c + hw] = '@'
 
     def update(self):
         self.buffer = np.full((self.height, self.width), " ") # Clear buffer
 
-        self.buffer[self.floor_y:, :] = self.ascii_map[1] # Draw floor
+        self.buffer[self.floor_y:, ::2] = self.ascii_map[1] # Draw floor
 
         for column in range(self.width - 1): # Draw walls
             self.cast_ray(column)
