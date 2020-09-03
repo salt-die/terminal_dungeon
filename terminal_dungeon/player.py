@@ -1,31 +1,32 @@
 import numpy as np
+from math import cos, sin
 
 def rotation_matrix(theta):
     """
     Returns a 2-dimensional rotation array of a given angle.
     """
-    return np.array([[np.cos(theta), np.sin(theta)],
-                     [-np.sin(theta), np.cos(theta)]])
+    r = cos(theta)
+    q = sin(theta)
+
+    return np.array([[ r, q],
+                     [-q, r]])
 
 class Player:
     """
     Player class with methods for moving and updating any effects on the
     player such as falling.
     """
+    field_of_view = .6  # Somewhere between 0 and 1 is reasonable
     speed = .1
 
     rotate_speed = .07
-
-    jump_time = 8
-    is_jumping = False
-    z = 0.0
-
-    field_of_view = .6  # Somewhere between 0 and 1 is reasonable
-
     left = rotation_matrix(-rotate_speed)
     right = rotation_matrix(rotate_speed)
-
     perp = rotation_matrix(3 * np.pi / 2)
+
+    jump_time = 10
+    is_jumping = False
+    z = 0.0  # "height" off the ground
 
     def __init__(self, game_map, pos=np.array([5., 5.]), initial_angle=0):
         self.game_map = game_map
@@ -34,7 +35,7 @@ class Player:
 
         # generate z sequence for jumping
         t = np.arange(self.jump_time + 1)
-        self.zs = t * (self.jump_time - t) / self.jump_time**2
+        self.zs = 2 * t * (self.jump_time - t) / self.jump_time**2
 
     def jump(self):
         if self.is_jumping:
