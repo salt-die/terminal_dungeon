@@ -19,7 +19,9 @@ class Renderer:
 
     textures_on = True
 
-    minimap_width = 3
+    minimap_width = .2  # Fraction of screen
+    minimap_height = .3
+    minimap_pos = 5, 5  # minimap's lower-right corner's offset from screen's lower-right corner
     pad = 50
 
     def __init__(self, screen, player, wall_textures, sprite_textures):
@@ -179,18 +181,20 @@ class Renderer:
 
     def draw_minimap(self):
         pad = self.pad
-        width = self.minimap_width
+        x_offset, y_offset = self.minimap_pos
+        width = int(self.minimap_width * self.width)
+        width += width % 2
+        hw = width // 2
+        height = int(self.minimap_height * self.height)
+        height += height % 2
+        hh = height // 2
 
-        start_col = 2 * (self.width // width) - 2
-        start_row = 2 * (self.height // width) - 1
         x, y = self.player.pos.astype(int) + pad
-        half_w = self.width // width // 2
-        half_h = self.height // width // 2
 
-        self.buffer[start_row: start_row + 2 * half_h,
-                    start_col: start_col + 2 * half_w] = self.mini_map[y - half_h: y + half_h,
-                                                                       x - half_w: x + half_w]
-        self.buffer[start_row + half_h, start_col + half_w] = '@'
+        self.buffer[-height - y_offset: -y_offset,
+                    -width - x_offset: -x_offset] = self.mini_map[y - hh: y + hh,
+                                                          x - hw: x + hw]
+        self.buffer[start_row + hh, start_col + hw] = '@'
 
     def update(self):
         self.buffer = np.full((self.height, self.width), " ") # Clear buffer
