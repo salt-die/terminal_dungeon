@@ -1,7 +1,5 @@
 import json
-from dataclasses import dataclass
 from pathlib import Path
-from typing import List
 import numpy as np
 
 
@@ -33,15 +31,14 @@ class Map:
         return self._map[tuple(map(int, key))]
 
 
-@dataclass
 class Sprite:
     """Helper class to simplify working with sprites."""
-    pos: List[float]
-    tex: int
-    relative = np.array([0.0, 0.0])
+    __slots__ = "pos", "tex", "relative"
 
-    def __post_init__(self):
-        self.pos = np.array(self.pos)
+    def __init__(self, pos, tex):
+        self.pos = np.array(pos)
+        self.tex = tex
+        self.relative = np.array([0.0, 0.0])
 
     @property
     def distance(self):
