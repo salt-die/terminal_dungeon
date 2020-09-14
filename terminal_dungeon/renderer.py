@@ -65,12 +65,14 @@ class Renderer:
 
         TODO: Pass a full numpy array of columns all at once.
         """
-        ray_angle = self.player.cam.T @ np.array((1, 2 * column * self.angle_increment - 1))
-        map_pos = self.player.pos.astype(int)
+        player = self.player
+
+        ray_angle = player.cam.T @ np.array((1, 2 * column * self.angle_increment - 1))
+        map_pos = player.pos.astype(int)
         with np.errstate(divide="ignore"):
             delta = abs(1 / ray_angle)
         step = 2 * np.heaviside(ray_angle, 1) - 1  # Same as np.sign except 0 is mapped to 1
-        side_dis = step * (map_pos + (step + 1) / 2 - self.player.pos) * delta
+        side_dis = step * (map_pos + (step + 1) / 2 - player.pos) * delta
 
         # Cast a ray until we hit a wall or hit max_range
         for _ in range(self.max_hops):
@@ -84,17 +86,18 @@ class Renderer:
             return
 
         # Avoiding euclidean distance, to avoid fish-eye effect.
-        wall_dis = (map_pos[side] - self.player.pos[side] + (1 - step[side]) / 2) / ray_angle[side]
+        wall_dis = (map_pos[side] - player.pos[side] + (1 - step[side]) / 2) / ray_angle[side]
         # Save distance for sprite calculations.
         self.distances[column] = wall_dis
+        h = self.height
 
-        line_height = int(self.height / wall_dis) if wall_dis else self.height
+        line_height = int(h / wall_dis) if wall_dis else h
         if line_height == 0:
             return  # Draw nothing
 
-        jump_height = self.player.z * line_height
-        line_start = max(0, int((self.height - line_height) / 2 + jump_height))
-        line_end = min(self.height, int((self.height + line_height) / 2 + jump_height))
+        jump_height = player.z * line_height
+        line_start = max(0, int((h - line_height) / 2 + jump_height))
+        line_end = min(h, int((h + line_height) / 2 + jump_height))
         drawn_height = line_end - line_start
 
         shade = min(drawn_height, self.shade_dif)
@@ -103,10 +106,10 @@ class Renderer:
         shade_buffer = np.full(drawn_height, shade)
 
         if self.textures_on:
-            tex_num = self.game_map[map_pos] - 1
-            texture_width, texture_height = self.textures[tex_num].shape
+            tex = self.textures[self.game_map[map_pos] - 1]
+            texture_width, texture_height = tex.shape
 
-            wall_x = (self.player.pos[1 - side] + wall_dis * ray_angle[1 - side]) % 1
+            wall_x = (player.pos[1 - side] + wall_dis * ray_angle[1 - side]) % 1
             tex_x = int(wall_x * texture_width)
             if (-1)**side * ray_angle[side] < 0:
                 tex_x = texture_width - tex_x - 1
@@ -118,50 +121,52 @@ class Renderer:
             # Note 2 * n - 12 is 0 for n = 6, i.e., values above 6 are additive and
             # below 6 are subtractive. For larger ascii maps, one may want to use linear
             # equation with a larger slope.
-            shade_buffer += 2 * self.textures[tex_num][tex_x, tex_ys] - 12
+            shade_buffer += 2 * tex[tex_x, tex_ys] - 12
             np.clip(shade_buffer, 1, self.shades, out=shade_buffer)
 
         self.buffer[line_start:line_end, column] = self.ascii_map[shade_buffer]
 
     def cast_sprites(self):
+        buffer = self.buffer
+        player = self.player
+        h = self.height
+        w = self.width
+
         for sprite in self.game_map.sprites:
             # Relative position of sprite to player
-            sprite["relative"] = self.player.pos - sprite["pos"]
-
-        # Sprites sorted by distance (squared) from player.
-        sorted_sprites = sorted(self.game_map.sprites,
-                                key=lambda s:s["relative"] @ s["relative"], reverse=True)
+            sprite.relative = player.pos - sprite.pos
 
         # Camera Inverse used to calculate transformed position of sprites.
-        cam_inv = np.linalg.inv(-self.player.cam[::-1])
+        cam_inv = np.linalg.inv(-player.cam[::-1])
 
-        for sprite in sorted_sprites: # Draw each sprite from furthest to closest.
+        for sprite in sorted(self.game_map.sprites):  # Draw each sprite from furthest to closest.
             # Transformed position of sprites due to camera's plane and angle
-            trans_pos = sprite["relative"] @ cam_inv
+            trans_pos = sprite.relative @ cam_inv
 
             if trans_pos[1] <= 0:  # Sprite is behind player, don't draw it.
                 continue
 
             # Sprite x-position on screen
-            sprite_x = int(self.width / 2 * (1 + trans_pos[0] / trans_pos[1]))
+            sprite_x = int(w / 2 * (1 + trans_pos[0] / trans_pos[1]))
 
-            sprite_height = int(self.height / trans_pos[1])
-            sprite_width = int(self.width / trans_pos[1] / 2)
+            sprite_height = int(h / trans_pos[1])
+            sprite_width = int(w / trans_pos[1] / 2)
             if not (sprite_height and sprite_width):  # Sprite too small.
                 continue
 
-            jump_height = self.player.z * sprite_height
-            start_y = max(0, int((self.height - sprite_height) / 2 + jump_height))
-            end_y = min(self.height, int((self.height + sprite_height) / 2 + jump_height))
+            jump_height = player.z * sprite_height
+            start_y = max(0, int((h - sprite_height) / 2 + jump_height))
+            end_y = min(h, int((h + sprite_height) / 2 + jump_height))
 
             start_x = max(0, -sprite_width // 2 + sprite_x)
-            end_x = min(self.width, sprite_width // 2 + sprite_x)
+            end_x = min(w, sprite_width // 2 + sprite_x)
 
-            tex_width, tex_height = self.textures[sprite["image"]].shape
+            tex = self.textures[sprite.tex]
+            tex_width, tex_height = tex.shape
 
             # Calculate some constants outside the next loops:
             clip_x = sprite_x - sprite_width / 2
-            clip_y = (sprite_height - self.height) / 2 - jump_height
+            clip_y = (sprite_height - h) / 2 - jump_height
             width_ratio = tex_width / sprite_width
             height_ratio = tex_height / sprite_height
 
@@ -171,13 +176,13 @@ class Renderer:
                 tex_x = int((column - clip_x) * width_ratio)
 
                 # Check that column isn't off-screen and that sprite isn't blocked by a wall.
-                if not (0 <= column <= self.width and trans_pos[1] <= self.distances[column]):
+                if not (0 <= column <= w and trans_pos[1] <= self.distances[column]):
                     continue
 
                 tex_ys = np.clip((np.arange(start_y, end_y) + clip_y) * height_ratio, 0, None).astype(int)
-                self.buffer[start_y:end_y, column] = np.where(self.textures[sprite["image"]][tex_x, tex_ys] != "0",
-                                                              self.textures[sprite["image"]][tex_x, tex_ys],
-                                                              self.buffer[start_y:end_y, column])
+                buf_col = buffer[start_y:end_y, column]
+                tex_col = tex[tex_x, tex_ys]
+                buf_col[:] = np.where(tex_col != "0", tex_col, buf_col)
 
     def draw_minimap(self):
         pad = self.pad
