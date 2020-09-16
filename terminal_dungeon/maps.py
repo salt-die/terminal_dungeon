@@ -28,7 +28,7 @@ class Map:
 
     def __getitem__(self, key):
         # We often would convert key to a tuple with ints when indexing the map elsewhere, so we just moved that logic to here:
-        return self._map[tuple(map(int, key))]
+        return self._map[int(key[0]), int(key[1])]
 
 
 class Sprite:
