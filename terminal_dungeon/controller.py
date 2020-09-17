@@ -71,7 +71,7 @@ class Controller():
             self.running = False
             return
         if self.keys[TOGGLE_TEXTURE]:
-            self.renderer.textures_on = not self.renderer.textures_on
+            self.renderer.toggle_textures()
             self.keys[TOGGLE_TEXTURE] = False
         self.movement()
 

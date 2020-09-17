@@ -28,7 +28,7 @@ class Player:
     is_jumping = False
     z = 0.0  # "height" off the ground
 
-    def __init__(self, game_map, pos=np.array([5., 5.]), initial_angle=0):
+    def __init__(self, game_map, pos=np.array([5., 5.]), initial_angle=0.001):
         self.game_map = game_map
         self.pos = pos
         self.cam = np.array([[1, 0], [0, self.field_of_view]]) @ rotation_matrix(initial_angle)
@@ -67,15 +67,10 @@ class Player:
         self.cam = self.cam @ (self.left if left else self.right)
 
     def move(self, speed, strafe=False):
-        next_step = self.pos + speed * \
-                    (self.cam[0] @ self.perp if strafe else self.cam[0])
+        next_step = self.pos + speed * (self.cam[0] @ self.perp if strafe else self.cam[0])
 
-        # If we can move both coordinates at once, we should
-        if not self.game_map[next_step]:
-            self.pos = next_step
-
-        # Allows 'sliding' on walls
-        elif not self.game_map[next_step[0], self.pos[1]]:
+        if self.game_map[next_step[0], self.pos[1]] == 0:
             self.pos[0] = next_step[0]
-        elif not self.game_map[self.pos[0], next_step[1]]:
+
+        if self.game_map[self.pos[0], next_step[1]] == 0:
             self.pos[1] = next_step[1]

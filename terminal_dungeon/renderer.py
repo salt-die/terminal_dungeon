@@ -4,6 +4,10 @@ import numpy as np
 from math import ceil, floor
 from pathlib import Path
 
+def clamp(mi, val, ma):
+    return max(min(ma, val), mi)
+
+
 class Renderer:
     """
     The Renderer class is responsible for everything drawn on the screen --
@@ -17,21 +21,35 @@ class Renderer:
     side_shade = (shades + 1) // 5
     shade_dif = shades - side_shade
 
-    textures_on = True
+    _textures_on = True
 
     minimap_width = .2  # Fraction of screen
     minimap_height = .3
     minimap_pos = 5, 5  # minimap's lower-right corner's offset from screen's lower-right corner
     pad = 50
 
-    def __init__(self, screen, player, wall_textures, sprite_textures):
+    def __init__(self, screen, player, wall_textures=None, sprite_textures=None):
         self.screen = screen
         self.resize()
 
         self.player = player
         self.game_map = player.game_map
         self.mini_map = np.pad(np.where(self.game_map._map.T, '#', ' '), self.pad, constant_values=' ')
+
+        if wall_textures is None:
+            wall_textures = []
+
+        if sprite_textures is None:
+            sprite_textures = []
+
         self._load_textures(wall_textures, sprite_textures)
+
+    @property
+    def textures_on(self):
+        return self.wall_textures and self._textures_on
+
+    def toggle_textures(self):
+        self._textures_on = not self._textures_on
 
     def resize(self):
         try: # linux
@@ -40,30 +58,30 @@ class Renderer:
         except: # windows
             self.height, self.width = self.screen.getmaxyx()
             os.system(f"mode con cols={self.width} lines={self.height}")
+
         self.angle_increment = 1 / self.width
         self.floor_y = self.height // 2
         self.distances = np.zeros(self.width)
 
     def _load_textures(self, wall_textures, sprite_textures):
-        self.textures = tex = []  # We may store the different texture types in different lists in the future.
+        self.wall_textures = []
         for name in wall_textures:
             filename = str(Path("terminal_dungeon", "wall_textures", name + ".txt"))
             with open(filename, "r") as file:
                 tmp = file.read()
-            tex.append(np.array([list(map(int, line)) for line in tmp.splitlines()]).T)
+            self.wall_textures.append(np.array([list(map(int, line)) for line in tmp.splitlines()]).T)
 
+        self.sprite_textures = {}
         for name in sprite_textures:
             filename = str(Path("terminal_dungeon", "sprite_textures", name + ".txt"))
             with open(filename, "r") as file:
                 tmp = file.read()
-            tex.append(np.array([list(line) for line in tmp.splitlines()]).T)
+            self.sprite_textures[name] = np.array([list(line) for line in tmp.splitlines()]).T
 
     def cast_ray(self, column):
         """
         Cast rays and draw columns whose heights correspond to the distance a ray traveled
         until it hit a wall.
-
-        TODO: Pass a full numpy array of columns all at once.
         """
         player = self.player
 
@@ -71,8 +89,9 @@ class Renderer:
         map_pos = player.pos.astype(int)
         with np.errstate(divide="ignore"):
             delta = abs(1 / ray_angle)
-        step = 2 * np.heaviside(ray_angle, 1) - 1  # Same as np.sign except 0 is mapped to 1
-        side_dis = step * (map_pos + (step + 1) / 2 - player.pos) * delta
+        step = np.sign(ray_angle)
+        pos_step = np.where(step == 1, 1, 0)
+        side_dis = step * (map_pos + pos_step - player.pos) * delta
 
         # Cast a ray until we hit a wall or hit max_range
         for _ in range(self.max_hops):
@@ -85,8 +104,8 @@ class Renderer:
             self.distances[column] = float("inf")
             return
 
-        # Avoiding euclidean distance, to avoid fish-eye effect.
-        wall_dis = (map_pos[side] - player.pos[side] + (1 - step[side]) / 2) / ray_angle[side]
+        # Not euclidean distance to avoid fish-eye effect.
+        wall_dis = (map_pos[side] - player.pos[side] + (0 if step[side] == 1 else 1)) / ray_angle[side]
         # Save distance for sprite calculations.
         self.distances[column] = wall_dis
         h = self.height
@@ -106,7 +125,7 @@ class Renderer:
         shade_buffer = np.full(drawn_height, shade)
 
         if self.textures_on:
-            tex = self.textures[self.game_map[map_pos] - 1]
+            tex = self.wall_textures[self.game_map[map_pos] - 1]
             texture_width, texture_height = tex.shape
 
             wall_x = (player.pos[1 - side] + wall_dis * ray_angle[1 - side]) % 1
@@ -155,16 +174,16 @@ class Renderer:
                 continue
 
             jump_height = player.z * sprite_height
-            start_y = max(0, int((h - sprite_height) / 2 + jump_height))
-            end_y = min(h, int((h + sprite_height) / 2 + jump_height))
+            start_y = clamp(0, int((h - sprite_height) / 2 + jump_height), h)
+            end_y = clamp(0, int((h + sprite_height) / 2 + jump_height), h)
 
-            start_x = max(0, -sprite_width // 2 + sprite_x)
-            end_x = min(w, sprite_width // 2 + sprite_x)
+            start_x = clamp(0, -sprite_width // 2 + sprite_x, w)
+            end_x = clamp(0, sprite_width // 2 + sprite_x, w)
 
             columns = np.arange(start_x, end_x)
             columns = columns[(0 <= columns) & (columns <= w) & (y <= self.distances[columns])]
 
-            tex = self.textures[sprite.tex]
+            tex = self.sprite_textures[sprite.tex]
             tex_width, tex_height = tex.shape
 
             clip_y = (sprite_height - h) / 2 - jump_height
