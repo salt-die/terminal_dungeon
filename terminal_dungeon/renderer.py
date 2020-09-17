@@ -53,16 +53,18 @@ class Renderer:
 
     def resize(self):
         try: # linux
-            self.width, self.height = w, h = os.get_terminal_size()
+            w, h = os.get_terminal_size()
             curses.resizeterm(h, w)
         except: # windows
-            self.height, self.width = h, w = self.screen.getmaxyx()
+            h, w = self.screen.getmaxyx()
             os.system(f"mode con cols={w} lines={h}")
-
+        w -= 1
+        self.height = h
+        self.width = w
         self.angle_increment = 1 / w
         self.floor_y = h // 2
         self.distances = np.zeros(w)
-        self.buffer = np.full((h, w - 1), " ")
+        self.buffer = np.full((h, w), " ")
 
     def _load_textures(self, wall_textures, sprite_textures):
         self.wall_textures = []
@@ -216,7 +218,7 @@ class Renderer:
 
         self.buffer[self.floor_y:, ::2] = self.ascii_map[1]  # Draw floor
 
-        for column in range(self.width - 1):  # Draw walls
+        for column in range(self.width):  # Draw walls
             self.cast_ray(column)
 
         self.cast_sprites()
