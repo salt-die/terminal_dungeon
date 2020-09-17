@@ -28,9 +28,12 @@ class Player:
     is_jumping = False
     z = 0.0  # "height" off the ground
 
-    def __init__(self, game_map, pos=np.array([5., 5.]), initial_angle=0.001):
+    def __init__(self, game_map, pos=np.array([5., 5.]), initial_angle=0):
         self.game_map = game_map
         self.pos = pos
+
+        if initial_angle == 0:
+            initial_angle += 0.0001  # Nudge to avoid divide-by-zero errors
         self.cam = np.array([[1, 0], [0, self.field_of_view]]) @ rotation_matrix(initial_angle)
 
         # generate z sequence for jumping
@@ -66,8 +69,8 @@ class Player:
     def turn(self, left=True):
         self.cam = self.cam @ (self.left if left else self.right)
 
-    def move(self, speed, strafe=False):
-        next_step = self.pos + speed * (self.cam[0] @ self.perp if strafe else self.cam[0])
+    def move(self, direction, strafe=False):
+        next_step = self.pos + direction * self.speed * (self.cam[0] @ self.perp if strafe else self.cam[0])
 
         if self.game_map[next_step[0], self.pos[1]] == 0:
             self.pos[0] = next_step[0]

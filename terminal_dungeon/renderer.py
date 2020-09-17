@@ -87,8 +87,7 @@ class Renderer:
 
         ray_angle = player.cam.T @ np.array((1, 2 * column * self.angle_increment - 1))
         map_pos = player.pos.astype(int)
-        with np.errstate(divide="ignore"):
-            delta = abs(1 / ray_angle)
+        delta = abs(1 / ray_angle)
         step = np.sign(ray_angle)
         pos_step = np.where(step == 1, 1, 0)
         side_dis = step * (map_pos + pos_step - player.pos) * delta
@@ -108,8 +107,8 @@ class Renderer:
         wall_dis = (map_pos[side] - player.pos[side] + (0 if step[side] == 1 else 1)) / ray_angle[side]
         # Save distance for sprite calculations.
         self.distances[column] = wall_dis
-        h = self.height
 
+        h = self.height
         line_height = int(h / wall_dis) if wall_dis else h
         if line_height == 0:
             return  # Draw nothing
@@ -130,7 +129,7 @@ class Renderer:
 
             wall_x = (player.pos[1 - side] + wall_dis * ray_angle[1 - side]) % 1
             tex_x = int(wall_x * texture_width)
-            if (-1)**side * ray_angle[side] < 0:
+            if (-1 if side == 1 else 1) * ray_angle[side] < 0:
                 tex_x = texture_width - tex_x - 1
 
             offset = (line_height - (line_end - line_start)) / 2

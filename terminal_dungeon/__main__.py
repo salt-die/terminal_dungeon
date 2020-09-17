@@ -26,7 +26,7 @@ def main(screen):
 
     game_map = Map("map1")
     player = Player(game_map)
-    wall_textures = "wall1", "wall2"
+    wall_textures = "wall_1", "wall_2"
     sprite_textures = "dragon", "tree"
 
     Controller(Renderer(screen, player, wall_textures, sprite_textures)).start()

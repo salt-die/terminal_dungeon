@@ -95,9 +95,9 @@ class Controller():
         if left ^ right:
             self.player.turn(left)
         if up ^ down:
-            self.player.move((up - down) * self.player.speed)
+            self.player.move(up - down)
         if strafe_l ^ strafe_r:
-            self.player.move((strafe_l - strafe_r) * self.player.speed, True)
+            self.player.move(strafe_l - strafe_r, strafe=True)
         if self.keys[JUMP] and self.player.jump():
             self.keys.freeze()
 
