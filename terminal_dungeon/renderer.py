@@ -62,7 +62,7 @@ class Renderer:
         self.angle_increment = 1 / w
         self.floor_y = h // 2
         self.distances = np.zeros(w)
-        self.buffer = np.full((h, w), " ")
+        self.buffer = np.full((h, w - 1), " ")
 
     def _load_textures(self, wall_textures, sprite_textures):
         self.wall_textures = []
@@ -225,5 +225,5 @@ class Renderer:
 
         # Push buffer to screen
         for row_num, row in enumerate(self.buffer):
-            self.screen.addstr(row_num, 0, ''.join(row[:-1]))
+            self.screen.addstr(row_num, 0, ''.join(row))
         self.screen.refresh()
