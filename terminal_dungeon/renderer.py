@@ -89,8 +89,7 @@ class Renderer:
         map_pos = player.pos.astype(int)
         delta = abs(1 / ray_angle)
         step = np.sign(ray_angle)
-        pos_step = np.where(step == 1, 1, 0)
-        side_dis = step * (map_pos + pos_step - player.pos) * delta
+        side_dis = step * (np.heaviside(step, 1) - player.pos % 1) * delta
 
         # Cast a ray until we hit a wall or hit max_range
         for _ in range(self.max_hops):
