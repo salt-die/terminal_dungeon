@@ -53,15 +53,16 @@ class Renderer:
 
     def resize(self):
         try: # linux
-            self.width, self.height = os.get_terminal_size()
-            curses.resizeterm(self.height, self.width)
+            self.width, self.height = w, h = os.get_terminal_size()
+            curses.resizeterm(h, w)
         except: # windows
-            self.height, self.width = self.screen.getmaxyx()
-            os.system(f"mode con cols={self.width} lines={self.height}")
+            self.height, self.width = h, w = self.screen.getmaxyx()
+            os.system(f"mode con cols={w} lines={h}")
 
-        self.angle_increment = 1 / self.width
-        self.floor_y = self.height // 2
-        self.distances = np.zeros(self.width)
+        self.angle_increment = 1 / w
+        self.floor_y = h // 2
+        self.distances = np.zeros(w)
+        self.buffer = np.full((h, w), " ")
 
     def _load_textures(self, wall_textures, sprite_textures):
         self.wall_textures = []
@@ -211,20 +212,18 @@ class Renderer:
         self.buffer[r + hh, c + hw] = '@'
 
     def update(self):
-        self.buffer = np.full((self.height, self.width), " ") # Clear buffer
+        self.buffer[:, :] = " "  # Clear buffer
 
-        self.buffer[self.floor_y:, ::2] = self.ascii_map[1] # Draw floor
+        self.buffer[self.floor_y:, ::2] = self.ascii_map[1]  # Draw floor
 
-        for column in range(self.width - 1): # Draw walls
+        for column in range(self.width - 1):  # Draw walls
             self.cast_ray(column)
 
         self.cast_sprites()
 
         self.draw_minimap()
 
-        self.render()
-
-    def render(self):
+        # Push buffer to screen
         for row_num, row in enumerate(self.buffer):
             self.screen.addstr(row_num, 0, ''.join(row[:-1]))
         self.screen.refresh()
