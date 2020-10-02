@@ -8,7 +8,7 @@ class Map:
     A helper class for easy loading of maps.
 
     Maps with sprites should have corresponding json file with same name as the map and extension `.sprites`.
-    Each sprite in the file is a dict with keys "pos", "tex", for position and texture number the sprite uses.
+    Each sprite in the file is a dict with keys "pos", "tex", for position and name of the texture the sprite uses.
     """
     def __init__(self, map_name):
         # Load map
