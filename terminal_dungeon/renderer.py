@@ -1,7 +1,6 @@
 import os
 import curses
 import numpy as np
-from math import ceil, floor
 from pathlib import Path
 
 def clamp(mi, val, ma):
