@@ -93,7 +93,7 @@ class Renderer:
         step = np.sign(ray_angle)
         side_dis = step * (np.heaviside(step, 1) - player.pos % 1) * delta
 
-        # Cast a ray until we hit a wall or hit max_range
+        # Cast a ray until we hit a wall or hit max_hops
         for _ in range(self.max_hops):
             side = 0 if side_dis[0] < side_dis[1] else 1
             side_dis[side] += delta[side]
