@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 import numpy as np
 
+MAP_DIR = Path("terminal_dungeon") / "maps"
 
 class Map:
     """
@@ -12,15 +13,13 @@ class Map:
     """
     def __init__(self, map_name):
         # Load map
-        map_filename = str(Path("terminal_dungeon", "maps", map_name + ".txt"))
-        with open(map_filename, "r") as file:
+        with open(MAP_DIR / (map_name + ".txt")) as file:
             tmp = file.read()
         self._map = np.array([list(map(int, line)) for line in tmp.splitlines()]).T
 
         # Load sprites for map
-        sprites_path = Path("terminal_dungeon", "maps", map_name + ".sprites")
-        if sprites_path.is_file():
-            with open(str(sprites_path), "r") as file:
+        if (sprites_path := (MAP_DIR / (map_name + ".sprites"))).is_file():
+            with open(sprites_path) as file:
                 sprites = json.load(file)
             self.sprites = [Sprite(**sprite) for sprite in sprites]
         else:

@@ -3,9 +3,12 @@ import curses
 import numpy as np
 from pathlib import Path
 
+ROOT = Path("terminal_dungeon")
+WALL_DIR = ROOT / "wall_textures"
+SPRITE_DIR = ROOT / "sprite_textures"
+
 def clamp(mi, val, ma):
     return max(min(ma, val), mi)
-
 
 class Renderer:
     """
@@ -68,15 +71,13 @@ class Renderer:
     def _load_textures(self, wall_textures, sprite_textures):
         self.wall_textures = []
         for name in wall_textures:
-            filename = str(Path("terminal_dungeon", "wall_textures", name + ".txt"))
-            with open(filename, "r") as file:
+            with open(WALL_DIR / (name + ".txt")) as file:
                 tmp = file.read()
             self.wall_textures.append(np.array([list(map(int, line)) for line in tmp.splitlines()]).T)
 
         self.sprite_textures = {}
         for name in sprite_textures:
-            filename = str(Path("terminal_dungeon", "sprite_textures", name + ".txt"))
-            with open(filename, "r") as file:
+            with open(SPRITE_DIR / (name + ".txt")) as file:
                 tmp = file.read()
             self.sprite_textures[name] = np.array([list(line) for line in tmp.splitlines()]).T
 
