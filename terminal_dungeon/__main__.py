@@ -14,13 +14,19 @@ unicode characters.
 Values stored in textures should range from 0-9.  Values below 6 are
 subtractive and above 6 are additive.
 """
-
 import curses
 from .maps import Map
 from .player import Player
 from .renderer import Renderer
 from .controller import Controller
 
+def init_curses(screen):
+    curses.curs_set(0)
+    curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
+    screen.attron(curses.color_pair(1))
+    screen.nodelay(True)
+
+@curses.wrapper
 def main(screen):
     init_curses(screen)
 
@@ -33,12 +39,3 @@ def main(screen):
 
     curses.flushinp()
     curses.endwin()
-
-def init_curses(screen):
-    curses.curs_set(0)
-    curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
-    screen.attron(curses.color_pair(1))
-    screen.nodelay(True)
-
-if __name__ == "__main__":
-    curses.wrapper(main)
