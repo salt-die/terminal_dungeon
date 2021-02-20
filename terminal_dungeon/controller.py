@@ -42,7 +42,7 @@ class KeyDict(dict):
         return False
 
 
-class Controller():
+class Controller:
     """
     Controller class handles user input and updates all other objects.
     """
