@@ -59,7 +59,7 @@ class Renderer:
             curses.resizeterm(h, w)
         except: # windows
             h, w = self.screen.getmaxyx()
-            os.system(f"mode con cols={w} lines={h}")
+
         w -= 1
         self.height = h
         self.width = w
@@ -111,7 +111,7 @@ class Renderer:
         self.distances[column] = wall_dis
 
         h = self.height
-        line_height = int(h / wall_dis) if wall_dis else h
+        line_height = int(h / wall_dis) # if wall_dis else h  -- possible divide-by-0 error
         if line_height == 0:
             return  # Draw nothing
 
@@ -151,15 +151,17 @@ class Renderer:
         player = self.player
         h = self.height
         w = self.width
+        sprites = self.game_map.sprites
 
         for sprite in self.game_map.sprites:
             # Relative position of sprite to player
             sprite.relative = player.pos - sprite.pos
+        sprites.sort()
 
         # Camera Inverse used to calculate transformed position of sprites.
         cam_inv = np.linalg.inv(-player.cam[::-1])
 
-        for sprite in sorted(self.game_map.sprites):  # Draw each sprite from furthest to closest.
+        for sprite in sprites:  # Draw each sprite from furthest to closest.
             # Transformed position of sprites due to camera position
             x, y = sprite.relative @ cam_inv
 
@@ -198,9 +200,11 @@ class Renderer:
 
     def draw_minimap(self):
         pad = self.pad
+
         x_offset, y_offset = self.minimap_pos
         width = int(self.minimap_width * self.width)
         width += width % 2
+
         hw = width // 2
         height = int(self.minimap_height * self.height)
         height += height % 2
