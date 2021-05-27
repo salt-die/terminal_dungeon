@@ -21,8 +21,9 @@ STRAFE_RIGHT = KeyCode(char='e')
 
 
 class KeyDict(dict):
-    """Dictionary that ignores certain movement inputs when player is jumping."""
-    _ignored_inputs = {FORWARD_1, FORWARD_2, BACKWARD_1, BACKWARD_2, STRAFE_LEFT, STRAFE_RIGHT}
+    """Dictionary that ignores certain movement inputs when player is jumping.
+    """
+    _ignored_inputs = { FORWARD_1, FORWARD_2, BACKWARD_1, BACKWARD_2, STRAFE_LEFT, STRAFE_RIGHT }
 
     def __init__(self, player):
         self._player = player
@@ -43,8 +44,7 @@ class KeyDict(dict):
 
 
 class Controller:
-    """
-    Controller class handles user input and updates all other objects.
+    """Controller class handles user input and updates all other objects.
     """
     running = True
     resized = False
