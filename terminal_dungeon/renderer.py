@@ -153,7 +153,7 @@ class Renderer:
         w = self.width
         sprites = self.game_map.sprites
 
-        for sprite in self.game_map.sprites:
+        for sprite in sprites:
             # Relative position of sprite to player
             sprite.relative = player.pos - sprite.pos
         sprites.sort()
@@ -173,7 +173,7 @@ class Renderer:
 
             sprite_height = int(h / y)
             sprite_width = int(w / y / 2)
-            if not (sprite_height and sprite_width):  # Sprite too small.
+            if sprite_height == 0 or sprite_width == 0:  # Sprite too small.
                 continue
 
             jump_height = player.z * sprite_height
@@ -199,8 +199,6 @@ class Renderer:
             buffer[start_y:end_y, columns] = np.where(tex_rect != "0", tex_rect, buffer[start_y:end_y, columns])
 
     def draw_minimap(self):
-        pad = self.pad
-
         x_offset, y_offset = self.minimap_pos
         width = int(self.minimap_width * self.width)
         width += width % 2
@@ -208,9 +206,9 @@ class Renderer:
         hw = width // 2
         height = int(self.minimap_height * self.height)
         height += height % 2
-        hh = height // 2
+        hh = height // 2  # half-height
 
-        x, y = self.player.pos.astype(int) + pad
+        x, y = self.player.pos.astype(int) + self.pad
 
         r = -height - y_offset
         c = -width - x_offset
