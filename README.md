@@ -20,15 +20,10 @@ This engine was used to power a maze solving robot during Advent of Code 2019:
 * **'space'** to jump
 ***********
 Depending on your terminal font, Renderer.ascii_map may need to be adjusted.
-If you'd like to make an ascii map more suitable to your terminal's font,
-check my Snippets repository for a script that grabs mean brightness of
-unicode characters.
 
-Values stored in textures should range from 0-9.  Values below 6 are
-subtractive and above 6 are additive.
+Values stored in wall textures should range from 0-9. 6 is the default wall shade; values below 6 will darken the wall and above 6 will lighten it.
 ***********
-This project wouldn't have been possible without the following valuable
-resources:
+This project wouldn't have been possible without the following valuable resources:
 
 [Lode's Computer Graphics Tutorial](https://lodev.org/cgtutor/raycasting.html)
 
