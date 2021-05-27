@@ -30,7 +30,7 @@ def init_curses(screen):
 def main(screen):
     init_curses(screen)
 
-    game_map = Map("map1")
+    game_map = Map("map_1")
     player = Player(game_map)
     wall_textures = "wall_1", "wall_2"
     sprite_textures = "dragon", "tree"
