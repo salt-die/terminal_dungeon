@@ -11,6 +11,7 @@ def rotation_matrix(theta):
     return np.array([[ r, q],
                      [-q, r]])
 
+
 class Player:
     """
     Player class with methods for moving and updating any effects on the
