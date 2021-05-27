@@ -15,7 +15,7 @@ Values stored in textures should range from 0-9.  Values below 6 are
 subtractive and above 6 are additive.
 """
 import curses
-from .maps import Map
+from .map_loader import Map
 from .player import Player
 from .renderer import Renderer
 from .controller import Controller

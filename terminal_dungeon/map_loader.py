@@ -4,6 +4,7 @@ import numpy as np
 
 MAP_DIR = Path("terminal_dungeon") / "maps"
 
+
 class Map:
     """
     A helper class for easy loading of maps.
