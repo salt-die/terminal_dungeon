@@ -10,10 +10,14 @@ SPRITE_DIR = ROOT / "sprite_textures"
 def clamp(mi, val, ma):
     return max(min(ma, val), mi)
 
+
 class Renderer:
     """
-    The Renderer class is responsible for everything drawn on the screen --
-    including the environment, sprites, menus, items. All textures stored here.
+    Graphic engine.  Casts rays.  Casts sprites.  Kicks ass.
+
+    Notes
+    -----
+    If one wanted to add ceiling/floor textures, weapons, or anything new, just add a method
     """
     max_hops = 20  # How far rays are cast.
 
@@ -28,7 +32,7 @@ class Renderer:
     minimap_width = .2  # Fraction of screen
     minimap_height = .3
     minimap_pos = 5, 5  # minimap's lower-right corner's offset from screen's lower-right corner
-    pad = 50
+    pad = 50  # How much extra space is added around the edge of the mini-map -- for large terminals this will need to be increased.
 
     def __init__(self, screen, player, wall_textures=None, sprite_textures=None):
         self.screen = screen
@@ -38,13 +42,7 @@ class Renderer:
         self.game_map = player.game_map
         self.mini_map = np.pad(np.where(self.game_map._map.T, '#', ' '), self.pad, constant_values=' ')
 
-        if wall_textures is None:
-            wall_textures = []
-
-        if sprite_textures is None:
-            sprite_textures = []
-
-        self._load_textures(wall_textures, sprite_textures)
+        self._load_textures(wall_textures or [ ], sprite_textures or [ ])
 
     @property
     def textures_on(self):
@@ -69,17 +67,22 @@ class Renderer:
         self.buffer = np.full((h, w), " ")
 
     def _load_textures(self, wall_textures, sprite_textures):
-        self.wall_textures = []
+        # Wall textures will be integer arrays, while sprite textures are character arrays.
+        # This because the values in wall textures will add or subtract brightness to the current wall shading.
+        # If we used character arrays for walls, we wouldn't have different shades for N/S and E/W walls and
+        # walls further away wouldn't be dimmer, diminishing the 3d effect.
+        # This could be changed though, and would simplify some of the texture drawing logic in `cast_ray`.
+        self.wall_textures = [ ]
         for name in wall_textures:
-            with open(WALL_DIR / (name + ".txt")) as file:
-                tmp = file.read()
-            self.wall_textures.append(np.array([list(map(int, line)) for line in tmp.splitlines()]).T)
+            wall_lines = (WALL_DIR / (name + ".txt")).read_text().splitlines()
+            wall_as_integer_array = [list(map(int, line)) for line in wall_lines]
+            self.wall_textures.append(np.array(wall_as_integer_array).T)
 
-        self.sprite_textures = {}
+        self.sprite_textures = { }
         for name in sprite_textures:
-            with open(SPRITE_DIR / (name + ".txt")) as file:
-                tmp = file.read()
-            self.sprite_textures[name] = np.array([list(line) for line in tmp.splitlines()]).T
+            sprite_lines = (SPRITE_DIR / (name + ".txt")).read_text().splitlines()
+            sprite_as_character_array = list(map(list, sprite_lines))
+            self.sprite_textures[name] = np.array(sprite_as_character_array).T
 
     def cast_ray(self, column):
         """
