@@ -91,7 +91,7 @@ class Renderer:
         """
         player = self.player
 
-        ray_angle = player.cam.T @ np.array((1, 2 * column * self.angle_increment - 1))
+        ray_angle = np.array((1, 2 * column * self.angle_increment - 1)) @ player.cam
         map_pos = player.pos.astype(int)
         delta = abs(1 / ray_angle)
         step = np.sign(ray_angle)
