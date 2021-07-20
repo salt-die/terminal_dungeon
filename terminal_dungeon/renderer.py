@@ -137,7 +137,7 @@ class Renderer:
             if (-1 if side == 1 else 1) * ray_angle[side] < 0:
                 tex_x = texture_width - tex_x - 1
 
-            offset = (line_height - (line_end - line_start)) / 2
+            offset = (line_height - drawn_height) / 2
             ys = np.arange(drawn_height) + offset
             tex_ys = (ys * texture_height / line_height).astype(int)
             # Add or subtract texture values to shade values
