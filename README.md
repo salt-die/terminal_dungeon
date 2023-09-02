@@ -6,9 +6,9 @@ A Doom-like game engine that renders to ascii and outputs to terminal! From `/te
 
 This engine was used to power a maze solving robot during Advent of Code 2019:
 
-![Maze Solver](https://github.com/salt-die/Advent-of-Code/blob/master/maze_solver_2.gif)
+![Maze Solver](https://github.com/salt-die/Advent-of-Code/blob/main/visuals_media/maze_solver_2.gif)
 
-(see code here: [AoC Raycaster](https://github.com/salt-die/Advent-of-Code/tree/master/raycaster))
+(see code here: [AoC Raycaster](https://github.com/salt-die/Advent-of-Code/tree/main/2019/raycaster))
 
 
 * **'esc'** to exit
