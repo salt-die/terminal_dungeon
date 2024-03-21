@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "terminal_dungeon"
+description = "badass terminal graphics library"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "salt-die", email = "salt-die@protonmail.com"}]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "numpy>=1.26.4",
+    "pynput>=1.7.5",
+    "windows-curses>=2.3.2; platform_system=='Windows'",
+]
+dynamic = ["version"]
+
+[project.urls]
+"repository" = "https://github.com/salt-die/terminal_dungeon"
+
+[tool.setuptools.dynamic]
+version = {attr = "terminal_dungeon.__version__"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = []
+
+[tool.ruff.lint]
+select = [
+    "D",  # pydocstyle
+    "F",  # pyflakes
+    "E",  # pycodestyle - error
+    "W",  # pycodestyle - warning
+    "I",  # isort
+]
+ignore = [
+    "D105",  # undocumented-magic-method
+    "D205",  # blank-line-after-summary -- This rule seems bugged for summaries that need more than one line.
+]
+fixable = ["ALL"]
+
+[tool.ruff.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.pycodestyle]
+max-doc-length=88
