@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "terminal_dungeon"
-description = "badass terminal graphics library"
+description = "A raycasting library for your terminal!"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
