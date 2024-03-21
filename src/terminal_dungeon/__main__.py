@@ -2,9 +2,9 @@
 
 Controls
 --------
-- `esc` to exit
-- `t` to toggle textures
 - `wasdqe` or arrow-keys to move
+- `t` to toggle textures
+- `esc` to exit
 """
 
 from pathlib import Path

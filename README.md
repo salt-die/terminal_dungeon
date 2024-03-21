@@ -6,9 +6,9 @@
 
 ### Controls
 ------------
-* `ctrl+c` to exit
-* `t` to turn off textures
 * `wasdqe` or arrow-keys to move
+* `t` to toggle textures
+* `esc` to exit
 
 ### References
 --------------
