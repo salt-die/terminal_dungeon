@@ -101,10 +101,20 @@ class Sprite:
 
     def __post_init__(self) -> None:
         self.pos = np.asarray(self.pos)
-        self._relative: NDArray[np.float64] = np.zeros(2)
+        self._relative: NDArray[np.float32] = np.zeros(2)
         """Relative distance from camera."""
-        self.distance: np.float64 = 0.0
+        self.distance: np.float32 = 0.0
         """Distance from camera."""
+
+    @property
+    def relative(self) -> NDArray[np.float32]:
+        """Relative distance from camera."""
+        return self._relative
+
+    @relative.setter
+    def relative(self, relative: NDArray[np.float32]):
+        self._relative = relative
+        self.distance = relative @ relative
 
     def __lt__(self, other) -> bool:
         """Sprites are ordered by their distance to camera."""
