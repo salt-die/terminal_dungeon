@@ -4,7 +4,7 @@ import curses
 import platform
 import sys
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 
 # Patching windows-curses's wrapper on 3.12 due to a bug.
