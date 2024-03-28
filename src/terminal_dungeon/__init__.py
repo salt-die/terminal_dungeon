@@ -6,14 +6,11 @@ import sys
 
 __version__ = "0.1.2"
 
+_IS_WINDOWS: bool = platform.system() == "Windows"
 
 # Patching windows-curses's wrapper on 3.12 due to a bug.
 # More info: https://github.com/zephyrproject-rtos/windows-curses/issues/50
-if (
-    platform.system() == "Windows"
-    and sys.version_info.major == 3
-    and sys.version_info.minor >= 12
-):
+if _IS_WINDOWS and sys.version_info.major == 3 and sys.version_info.minor >= 12:
 
     def _wrapper(func):
         stdscr = None

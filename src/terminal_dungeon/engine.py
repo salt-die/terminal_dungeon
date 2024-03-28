@@ -5,7 +5,6 @@ import os
 import signal
 from collections import defaultdict
 from dataclasses import dataclass
-from platform import uname
 from time import monotonic
 
 import numpy as np
@@ -13,6 +12,7 @@ from numpy.typing import NDArray
 from pynput import keyboard
 from pynput.keyboard import Key, KeyCode
 
+from . import _IS_WINDOWS
 from .camera import Camera
 from .raycaster import Raycaster
 from .read_assets import Sprite
@@ -31,8 +31,6 @@ KEY_BINDINGS: dict[str, Key | KeyCode] = {
     "strafe_left": KeyCode(char="q"),
     "strafe_right": KeyCode(char="e"),
 }
-
-_IS_WINDOWS: bool = uname().system == "Windows"
 
 
 def _move_to(camera: Camera, game_map: NDArray[np.int64], pos: NDArray[np.float32]):
