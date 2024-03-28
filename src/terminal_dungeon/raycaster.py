@@ -167,10 +167,6 @@ class Raycaster:
             tex_ys = np.linspace(
                 tex_start, tex_end, num=drawn_height, endpoint=False, dtype=int
             )
-            # Add or subtract texture values to shade values
-            # Note 2 * n - 12 is 0 for n = 6, i.e., values above 6 are additive and
-            # below 6 are subtractive. For larger ascii maps, one may want to use linear
-            # equation with a larger slope.
             shade_buffer += self._shade_values[tex[tex_x, tex_ys]]
             np.clip(shade_buffer, 1, self._shades, out=shade_buffer)
 
