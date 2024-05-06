@@ -212,8 +212,7 @@ class Raycaster:
             columns = columns[y <= column_distances[columns]]
             clip_x = sprite_x - sprite_width / 2
             tex_xs = columns - clip_x
-            tex_xs *= tex_width
-            tex_xs /= sprite_width
+            tex_xs *= tex_width / sprite_width
 
             start_y = _clamp(0, int((h - sprite_height) / 2), h)
             end_y = _clamp(0, int((h + sprite_height) / 2), h)
