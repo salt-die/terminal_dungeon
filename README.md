@@ -4,14 +4,14 @@
 
 ![Terminal Dungeon Preview](preview.gif)
 
-### Controls
-------------
+## Controls
+
 * `wasdqe` or arrow-keys to move
 * `t` to toggle textures
 * `esc` to exit
 
-### References
---------------
+## References
+
 This project wouldn't have been possible without the following valuable resources:
 
 [Lode's Computer Graphics Tutorial](https://lodev.org/cgtutor/raycasting.html)
