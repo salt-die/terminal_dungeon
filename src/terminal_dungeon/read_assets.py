@@ -23,7 +23,7 @@ from numpy.typing import NDArray
 __all__ = ["read_map", "read_wall_textures", "read_sprite_textures", "Sprite"]
 
 
-def read_map(path: Path) -> NDArray[np.uint64]:
+def read_map(path: Path) -> NDArray[np.uint32]:
     """Read a map from a text file.
 
     Parameters
@@ -33,15 +33,20 @@ def read_map(path: Path) -> NDArray[np.uint64]:
 
     Returns
     -------
-    NDArray[np.uint64]
+    NDArray[np.uint32]
         A 2D integer numpy array with nonzero entries representing walls.
     """
     text = path.read_text()
-    return np.array([[int(cell) for cell in line] for line in text.splitlines()]).T
+    return np.array(
+        [[int(cell) for cell in line] for line in text.splitlines()], dtype=np.uint32
+    ).T
 
 
-def read_wall_textures(*paths: Path) -> list[NDArray[np.uint64]]:
-    r"""Read wall textures.
+def read_wall_textures(*paths: Path) -> list[NDArray[np.int32]]:
+    r"""Read wall textures from text files.
+
+    Wall textures are arrays of digits with low digits representing darker
+    "pixels" and higher digits brighter.
 
     Parameters
     ----------
@@ -50,7 +55,7 @@ def read_wall_textures(*paths: Path) -> list[NDArray[np.uint64]]:
 
     Returns
     -------
-    list[NDArray[np.str_]]
+    list[NDArray[np.int32]]
         A list of wall textures.
     """
 
@@ -62,7 +67,10 @@ def read_wall_textures(*paths: Path) -> list[NDArray[np.uint64]]:
 
 
 def read_sprite_textures(*paths: Path) -> list[NDArray[np.str_]]:
-    r"""Read sprite textures.
+    r"""Read sprite textures from text files.
+
+    Sprite textures can be any text with the caveat that "0" represents a transparent
+    character.
 
     Parameters
     ----------
@@ -86,8 +94,8 @@ def read_sprite_textures(*paths: Path) -> list[NDArray[np.str_]]:
 class Sprite:
     """A sprite for a raycaster.
 
-    Parameter
-    ---------
+    Parameters
+    ----------
     pos : NDArray[np.float32]
         Position of sprite on the map.
     texture : int
