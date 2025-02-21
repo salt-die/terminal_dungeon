@@ -12,15 +12,17 @@ Sprite textures are any plain ascii art with the caveat that the character "0"
 represents a transparent character.
 """
 
+from __future__ import annotations
+
+__all__ = ["read_map", "read_wall_textures", "read_sprite_textures", "iter_from_json"]
+
 import json
 from collections.abc import Iterator
-from dataclasses import dataclass
 from pathlib import Path
-
 import numpy as np
 from numpy.typing import NDArray
 
-__all__ = ["read_map", "read_wall_textures", "read_sprite_textures", "Sprite"]
+from .sprite import Sprite
 
 
 def read_map(path: Path) -> NDArray[np.uint32]:
@@ -42,7 +44,7 @@ def read_map(path: Path) -> NDArray[np.uint32]:
     ).T
 
 
-def read_wall_textures(*paths: Path) -> list[NDArray[np.int32]]:
+def read_wall_textures(*paths: Path) -> list[NDArray[np.uint8]]:
     r"""Read wall textures from text files.
 
     Wall textures are arrays of digits with low digits representing darker
@@ -55,7 +57,7 @@ def read_wall_textures(*paths: Path) -> list[NDArray[np.int32]]:
 
     Returns
     -------
-    list[NDArray[np.int32]]
+    list[NDArray[np.uint8]]
         A list of wall textures.
     """
 
@@ -90,60 +92,22 @@ def read_sprite_textures(*paths: Path) -> list[NDArray[np.str_]]:
     return [_read_sprite(path) for path in paths]
 
 
-@dataclass
-class Sprite:
-    """A sprite for a raycaster.
+def iter_from_json(path: Path) -> Iterator[Sprite]:
+    """Yield sprites from a json file.
 
     Parameters
     ----------
-    pos : NDArray[np.float32]
-        Position of sprite on the map.
-    texture : int
-        Index of sprite texture.
+    path : Path
+        Path to json.
+
+    Yields
+    ------
+    Sprite
+        A sprite for the caster.
     """
+    with open(path) as file:
+        data = json.load(file)
 
-    pos: NDArray[np.float32]
-    """Position of sprite on the map."""
-    texture_index: int
-    """Index of sprite texture."""
-
-    def __post_init__(self) -> None:
-        self.pos = np.asarray(self.pos)
-        self._relative: NDArray[np.float32] = np.zeros(2)
-        """Relative distance from camera."""
-        self.distance: np.float32 = 0.0
-        """Distance from camera."""
-
-    @property
-    def relative(self) -> NDArray[np.float32]:
-        """Relative distance from camera."""
-        return self._relative
-
-    @relative.setter
-    def relative(self, relative: NDArray[np.float32]):
-        self._relative = relative
-        self.distance = relative @ relative
-
-    def __lt__(self, other) -> bool:
-        """Sprites are ordered by their distance to camera."""
-        return self.distance > other.distance
-
-    @classmethod
-    def iter_from_json(cls, path: Path) -> Iterator["Sprite"]:
-        """Yield sprites from a json file.
-
-        Parameters
-        ----------
-        path : Path
-            Path to json.
-
-        Yields
-        ------
-        Sprite
-            A sprite for the caster.
-        """
-        with open(path) as file:
-            data = json.load(file)
-
-        for sprite_data in data:
-            yield cls(**sprite_data)
+    for sprite_data in data:
+        pos = tuple(sprite_data["pos"])
+        yield Sprite(pos=pos, texture_index=sprite_data["texture_index"])

@@ -15,7 +15,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "numpy>=1.26.4",
+    "numpy>=2.0.0",
     "pynput>=1.7.5",
     "windows-curses>=2.3.2; platform_system=='Windows'",
 ]
@@ -45,8 +45,8 @@ ignore = [
 ]
 fixable = ["ALL"]
 
-[tool.ruff.pydocstyle]
+[tool.ruff.lint.pydocstyle]
 convention = "numpy"
 
-[tool.ruff.pycodestyle]
+[tool.ruff.lint.pycodestyle]
 max-doc-length=88

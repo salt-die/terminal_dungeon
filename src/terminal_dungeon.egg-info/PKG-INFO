@@ -1,0 +1,38 @@
+Metadata-Version: 2.2
+Name: terminal_dungeon
+Version: 0.1.2
+Summary: A raycasting library for your terminal!
+Author-email: salt-die <salt-die@protonmail.com>
+License: MIT
+Project-URL: repository, https://github.com/salt-die/terminal_dungeon
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: numpy>=1.26.4
+Requires-Dist: pynput>=1.7.5
+Requires-Dist: windows-curses>=2.3.2; platform_system == "Windows"
+
+# Terminal Dungeon
+
+`terminal_dungeon` is a raycasting library for your terminal! `pip install terminal_dungeon` to install and `python -m terminal_dungeon` to play.
+
+![Terminal Dungeon Preview](preview.gif)
+
+## Controls
+
+* `wasdqe` or arrow-keys to move
+* `t` to toggle textures
+* `esc` to exit
+
+## References
+
+This project wouldn't have been possible without the following valuable resources:
+
+[Lode's Computer Graphics Tutorial](https://lodev.org/cgtutor/raycasting.html)
+
+[PyRay - Python Raycasting Engine](https://github.com/oscr/PyRay)
+
+[pygame-raycasting-experiment](https://github.com/crobertsbmw/pygame-raycasting-experiment/blob/master/raycast.py)

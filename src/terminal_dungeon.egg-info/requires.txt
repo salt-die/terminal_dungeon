@@ -1,0 +1,5 @@
+numpy>=1.26.4
+pynput>=1.7.5
+
+[:platform_system == "Windows"]
+windows-curses>=2.3.2

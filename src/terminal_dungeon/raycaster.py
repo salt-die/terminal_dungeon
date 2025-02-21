@@ -181,8 +181,8 @@ class Raycaster:
         column_distances = self._column_distances
 
         for sprite in sprites:
-            sprite.relative = -sprite.pos + camera.pos
-        sprites.sort()
+            sprite.relative = (sprite.pos[0] - camera.pos[0], sprite.pos[1] - camera.pos[1])
+        sprites.sort(key=lambda s: s.relative[0] ** 2 + s.relative[1] ** 2, reverse=True)
 
         # Camera Inverse used to calculate transformed position of sprites.
         cam_inv = np.linalg.inv(-camera._plane[::-1])
